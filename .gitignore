@@ -1,0 +1,5 @@
+.terraform
+terraform-provider-linuxbox
+terraform.tfstate.backup
+terraform.tfstate
+
