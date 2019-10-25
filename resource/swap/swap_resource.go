@@ -1,7 +1,6 @@
 package swap
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -18,18 +17,19 @@ func Resource() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"ssh_key": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:      schema.TypeString,
+				Required:  true,
+				Sensitive: true,
 			},
-			"remote": &schema.Schema{
+			"host_address": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 			"swap_size": &schema.Schema{
 				Type:     schema.TypeString,
-				Computed: false,
 				ForceNew: true,
+				Required: true,
 			},
 		},
 	}
@@ -37,13 +37,9 @@ func Resource() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
-	privateKeyBytes, err := base64.StdEncoding.DecodeString(d.Get("ssh_key").(string))
+	privateKeyBytes := d.Get("ssh_key").(string)
 
-	if err != nil {
-		return errors.Wrap(err, "while base64 decoding ssh_key")
-	}
-
-	signer, err := ssh.ParsePrivateKey(privateKeyBytes)
+	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(privateKeyBytes), []byte{})
 
 	if err != nil {
 		return errors.Wrap(err, "while parsing private ssh_key")
@@ -57,7 +53,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	server := d.Get("remote").(string)
+	server := d.Get("host_address").(string)
 
 	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:22", server), config)
 	if err != nil {
