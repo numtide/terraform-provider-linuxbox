@@ -53,3 +53,10 @@ resource "linuxbox_docker_build" "sample_service" {
     source_dir = "${path.module}/sample_service"
     source_hash = data.linuxbox_source_hash.sample_service.hash
 }
+
+resource "linuxbox_docker_container" "nginx" {
+    ssh_key = tls_private_key.ssh_key.private_key_pem
+    image_id = linuxbox_docker_copy_image.service.image_id
+    host_address = digitalocean_droplet.test.ipv4_address
+    ports = ["80:80"]
+}
