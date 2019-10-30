@@ -59,4 +59,9 @@ resource "linuxbox_docker_container" "nginx" {
     image_id = linuxbox_docker_copy_image.service.image_id
     host_address = digitalocean_droplet.test.ipv4_address
     ports = ["80:80"]
+    volumes = ["/var/run/docker.sock:/var/run/docker.sock"]
+    labels = {
+        "foo" = "bar"
+    }
+
 }

@@ -40,11 +40,39 @@ func Resource() *schema.Resource {
 			},
 
 			"ports": &schema.Schema{
-				Type:     schema.TypeSet,
-				Required: true,
+				Type: schema.TypeSet,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
+				Optional: true,
+				ForceNew: true,
+			},
+
+			"volumes": &schema.Schema{
+				Type: schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Optional: true,
+				ForceNew: true,
+			},
+
+			"labels": &schema.Schema{
+				Type: schema.TypeMap,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Optional: true,
+				ForceNew: true,
+			},
+
+			"args": &schema.Schema{
+				Type: schema.TypeList,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Optional: true,
+				ForceNew: true,
 			},
 
 			"container_id": &schema.Schema{
@@ -56,13 +84,6 @@ func Resource() *schema.Resource {
 }
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
-
-	portsSet := d.Get("ports").(*schema.Set)
-	ports := []string{}
-
-	for _, p := range portsSet.List() {
-		ports = append(ports, p.(string))
-	}
 
 	privateKeyBytes := d.Get("ssh_key").(string)
 
@@ -112,13 +133,43 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		"-d",
 	}
 
+	labelsMap := d.Get("labels").(map[string]interface{})
+
+	for k, v := range labelsMap {
+		cmd = append(cmd, "-l", fmt.Sprintf("%s=%s", shellescape.Quote(k), shellescape.Quote(v.(string))))
+	}
+
+	portsSet := d.Get("ports").(*schema.Set)
+	ports := []string{}
+
+	for _, p := range portsSet.List() {
+		ports = append(ports, p.(string))
+	}
+
 	if len(ports) > 0 {
 		for _, p := range ports {
 			cmd = append(cmd, "-p", shellescape.Quote(p))
 		}
 	}
 
+	volumesSet := d.Get("volumes").(*schema.Set)
+	volumes := []string{}
+
+	for _, p := range volumesSet.List() {
+		volumes = append(volumes, p.(string))
+	}
+
+	if len(volumes) > 0 {
+		for _, v := range volumes {
+			cmd = append(cmd, "-v", shellescape.Quote(v))
+		}
+	}
+
 	cmd = append(cmd, shellescape.Quote(imageID))
+
+	for _, a := range d.Get("args").([]interface{}) {
+		cmd = append(cmd, shellescape.Quote(a.(string)))
+	}
 
 	line := strings.Join(cmd, " ")
 
