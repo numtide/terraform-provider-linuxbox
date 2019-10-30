@@ -54,14 +54,47 @@ resource "linuxbox_docker_build" "sample_service" {
     source_hash = data.linuxbox_source_hash.sample_service.hash
 }
 
-resource "linuxbox_docker_container" "nginx" {
+resource "linuxbox_docker_container" "webpage" {
     ssh_key = tls_private_key.ssh_key.private_key_pem
     image_id = linuxbox_docker_copy_image.service.image_id
     host_address = digitalocean_droplet.test.ipv4_address
-    ports = ["80:80"]
-    volumes = ["/var/run/docker.sock:/var/run/docker.sock"]
     labels = {
-        "foo" = "bar"
+        "traefik.enable" = "true"
+        "traefik.port" = "80"
+        "traefik.frontend.rule" = "Host:${digitalocean_droplet.test.ipv4_address}.xip.io"
     }
+}
 
+resource "linuxbox_docker_container" "traefik" {
+    ssh_key = tls_private_key.ssh_key.private_key_pem
+    image_id = "traefik:v1.7.19-alpine"
+    host_address = digitalocean_droplet.test.ipv4_address
+    ports = [
+        "80:80",
+        "443:443",
+    ]
+    volumes = [
+        "/var/run/docker.sock:/var/run/docker.sock",
+        "/acme:/acme",
+    ]
+
+    args = [
+        "--accesslog",
+        "--defaultentrypoints=http",
+        "--defaultentrypoints=http,https",
+        "--entrypoints=Name:http Address::80",        
+        "--entryPoints=Name:https Address::443 TLS",
+        "--docker",
+        "--docker.watch",
+        "--docker.exposedbydefault","false",
+        "--acme",
+        "--acme.entryPoint=https",
+        "--acme.httpChallenge.entryPoint=http",
+        "--acme.OnHostRule=true",
+        "--acme.onDemand=false",
+        "--acme.email=dragan@netice9.com",
+        "--acme.tlsconfig=true",
+        "--acme.storage=/acme/certs.json",
+        // "--providers.docker.endpoint=unix:///var/run/docker.sock",
+    ]
 }
