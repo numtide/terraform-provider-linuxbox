@@ -66,6 +66,21 @@ func Resource() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"env": &schema.Schema{
+				Type: schema.TypeMap,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Optional: true,
+				ForceNew: true,
+			},
+
+			"restart": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
 			"args": &schema.Schema{
 				Type: schema.TypeList,
 				Elem: &schema.Schema{
@@ -125,18 +140,28 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	imageID := d.Get("image_id").(string)
 
-	// cmd := "docker run " + shellescape.Quote(imageID)
-
 	cmd := []string{
 		"docker",
 		"run",
 		"-d",
 	}
 
+	restart, restartSet := d.GetOkExists("restart")
+
+	if restartSet {
+		cmd = append(cmd, "--restart", shellescape.Quote(restart.(string)))
+	}
+
 	labelsMap := d.Get("labels").(map[string]interface{})
 
 	for k, v := range labelsMap {
 		cmd = append(cmd, "-l", fmt.Sprintf("%s=%s", shellescape.Quote(k), shellescape.Quote(v.(string))))
+	}
+
+	envMap := d.Get("env").(map[string]interface{})
+
+	for k, v := range envMap {
+		cmd = append(cmd, "-e", fmt.Sprintf("%s=%s", shellescape.Quote(k), shellescape.Quote(v.(string))))
 	}
 
 	portsSet := d.Get("ports").(*schema.Set)

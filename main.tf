@@ -9,7 +9,7 @@ resource "digitalocean_droplet" "test" {
     name   = "terraform-test-1"
     region = "lon1"
     size   = "s-1vcpu-1gb"
-    ssh_keys = [digitalocean_ssh_key.terraform.fingerprint, data.digitalocean_ssh_key.terraform.fingerprint]
+    ssh_keys = [digitalocean_ssh_key.terraform.fingerprint]
 }
 
 resource "tls_private_key" "ssh_key" {
@@ -17,14 +17,9 @@ resource "tls_private_key" "ssh_key" {
     ecdsa_curve = "P521"
 }
 
-
 resource "digitalocean_ssh_key" "terraform" {
     name       = "Terraform Test"
     public_key = tls_private_key.ssh_key.public_key_openssh
-}
-
-data "digitalocean_ssh_key" "terraform" {
-    name = "my-laptop"
 }
 
 resource "linuxbox_swap" "host_swap" {
@@ -36,6 +31,12 @@ resource "linuxbox_swap" "host_swap" {
 resource "linuxbox_docker" "docker" {
     host_address = digitalocean_droplet.test.ipv4_address
     ssh_key = tls_private_key.ssh_key.private_key_pem
+}
+
+resource "linuxbox_ssh_authorized_key" "docker" {
+    host_address = digitalocean_droplet.test.ipv4_address
+    ssh_key = tls_private_key.ssh_key.private_key_pem
+    key_to_add = file("~/.ssh/id_rsa.pub")
 }
 
 resource "linuxbox_docker_copy_image" "service" {
@@ -63,9 +64,18 @@ resource "linuxbox_docker_container" "webpage" {
         "traefik.port" = "80"
         "traefik.frontend.rule" = "Host:${digitalocean_droplet.test.ipv4_address}.xip.io"
     }
+    
+    env = {
+        "foo" = "bar"
+    }
+
+    restart = "unless-stopped"
 }
 
 resource "linuxbox_docker_container" "traefik" {
+    
+    depends_on = [linuxbox_docker.docker]
+
     ssh_key = tls_private_key.ssh_key.private_key_pem
     image_id = "traefik:v1.7.19-alpine"
     host_address = digitalocean_droplet.test.ipv4_address
@@ -77,6 +87,8 @@ resource "linuxbox_docker_container" "traefik" {
         "/var/run/docker.sock:/var/run/docker.sock",
         "/acme:/acme",
     ]
+
+    restart = "unless-stopped"
 
     args = [
         "--accesslog",

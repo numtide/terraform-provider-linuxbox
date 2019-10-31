@@ -6,6 +6,7 @@ import (
 	"github.com/draganm/terraform-provider-linuxbox/resource/docker/build"
 	"github.com/draganm/terraform-provider-linuxbox/resource/docker/container"
 	"github.com/draganm/terraform-provider-linuxbox/resource/docker/copyimage"
+	"github.com/draganm/terraform-provider-linuxbox/resource/ssh/authorizedkey"
 	"github.com/draganm/terraform-provider-linuxbox/resource/swap"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -17,11 +18,12 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"linuxbox_swap":              swap.Resource(),
-			"linuxbox_docker":            docker.Resource(),
-			"linuxbox_docker_copy_image": copyimage.Resource(),
-			"linuxbox_docker_build":      build.Resource(),
-			"linuxbox_docker_container":  container.Resource(),
+			"linuxbox_swap":               swap.Resource(),
+			"linuxbox_ssh_authorized_key": authorizedkey.Resource(),
+			"linuxbox_docker":             docker.Resource(),
+			"linuxbox_docker_copy_image":  copyimage.Resource(),
+			"linuxbox_docker_build":       build.Resource(),
+			"linuxbox_docker_container":   container.Resource(),
 		},
 	}
 }
