@@ -69,6 +69,8 @@ resource "linuxbox_docker_container" "webpage" {
         "foo" = "bar"
     }
 
+    name = "nginx"
+
     restart = "unless-stopped"
 }
 
@@ -109,4 +111,6 @@ resource "linuxbox_docker_container" "traefik" {
         "--acme.storage=/acme/certs.json",
         // "--providers.docker.endpoint=unix:///var/run/docker.sock",
     ]
+
+    name = "traefik"
 }

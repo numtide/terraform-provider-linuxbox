@@ -90,6 +90,12 @@ func Resource() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
 			"container_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
@@ -150,6 +156,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	if restartSet {
 		cmd = append(cmd, "--restart", shellescape.Quote(restart.(string)))
+	}
+
+	name, nameSet := d.GetOkExists("name")
+
+	if nameSet {
+		cmd = append(cmd, "--name", shellescape.Quote(name.(string)))
 	}
 
 	labelsMap := d.Get("labels").(map[string]interface{})
