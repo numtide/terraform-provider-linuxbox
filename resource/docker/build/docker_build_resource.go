@@ -34,6 +34,12 @@ func Resource() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"dockerfile": &schema.Schema{
+				Type:     schema.TypeString,
+				Default:  "Dockerfile",
+				Optional: true,
+				ForceNew: true,
+			},
 			"image_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
@@ -68,7 +74,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	ibResponse, err := dc.ImageBuild(context.Background(), rc, types.ImageBuildOptions{
-		Tags: []string{imageID},
+		Tags:       []string{imageID},
+		Dockerfile: d.Get("dockerfile").(string),
 	})
 
 	if err != nil {
