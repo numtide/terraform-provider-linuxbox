@@ -9,9 +9,11 @@ import (
 
 	"strings"
 
+	"github.com/docker/cli/cli/command/image/build"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
+	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
@@ -66,12 +68,27 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return resourceRead(d, m)
 	}
 
-	rc, err := archive.Tar(sourceDir, archive.Uncompressed)
-	defer rc.Close()
+	excludes, err := build.ReadDockerignore(sourceDir)
+	if err != nil {
+		return err
+	}
+
+	if err := build.ValidateContextDirectory(sourceDir, excludes); err != nil {
+		return errors.Wrapf(err, "while checking context")
+	}
+
+	excludes = build.TrimBuildFilesFromExcludes(excludes, "Dockerfile", false)
+
+	rc, err := archive.TarWithOptions(sourceDir, &archive.TarOptions{
+		ExcludePatterns: excludes,
+		ChownOpts:       &idtools.Identity{UID: 0, GID: 0},
+	})
 
 	if err != nil {
 		return errors.Wrap(err, "while creating tar uploader")
 	}
+
+	defer rc.Close()
 
 	ibResponse, err := dc.ImageBuild(context.Background(), rc, types.ImageBuildOptions{
 		Tags:       []string{imageID},
