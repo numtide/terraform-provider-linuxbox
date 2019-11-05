@@ -167,9 +167,12 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 		return errors.Wrap(err, "while creating docker client")
 	}
 
-	sourceHash := d.Get("source_hash").(string)
+	imageID := d.Get("image_id").(string)
+	_, _, err = dc.ImageInspectWithRaw(context.Background(), imageID)
 
-	imageID := fmt.Sprintf("sourcebuild:%s", sourceHash)
+	if client.IsErrNotFound(err) {
+		return nil
+	}
 
 	_, err = dc.ImageRemove(context.Background(), imageID, types.ImageRemoveOptions{
 		PruneChildren: true,
