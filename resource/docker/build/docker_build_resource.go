@@ -1,6 +1,7 @@
 package build
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -110,6 +111,8 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	lastID := ""
 
+	output := new(bytes.Buffer)
+
 	for {
 		msg := jsonmessage.JSONMessage{}
 		err = dec.Decode(&msg)
@@ -123,12 +126,14 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 		matches := builtRegexp.FindStringSubmatch(msg.Stream)
 
+		output.WriteString(msg.Stream)
+
 		if len(matches) > 1 {
 			lastID = matches[1]
 		}
 
 		if msg.Error != nil {
-			return errors.Errorf("error code %d building image: %s", msg.Error.Code, msg.Error.Message)
+			return errors.Errorf("error code %d building image: %s, output:\n%s", msg.Error.Code, msg.Error.Message, output.String())
 		}
 	}
 
