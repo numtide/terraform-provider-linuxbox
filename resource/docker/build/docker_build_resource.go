@@ -168,6 +168,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 	_, err = dc.ImageRemove(context.Background(), imageID, types.ImageRemoveOptions{
 		PruneChildren: true,
+		Force:         true,
 	})
 
 	if err != nil && strings.Contains(err.Error(), "No such image") {
