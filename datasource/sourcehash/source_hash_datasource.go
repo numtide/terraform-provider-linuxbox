@@ -17,7 +17,7 @@ func Resource() *schema.Resource {
 		Read: resourceRead,
 
 		Schema: map[string]*schema.Schema{
-			"source_dirs": &schema.Schema{
+			"sources": &schema.Schema{
 				Type:     schema.TypeSet,
 				Required: true,
 				Elem: &schema.Schema{
@@ -34,17 +34,17 @@ func Resource() *schema.Resource {
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 
-	schemaSet := d.Get("source_dirs").(*schema.Set)
-	sourceDirs := []string{}
+	schemaSet := d.Get("sources").(*schema.Set)
+	sources := []string{}
 
 	id := ""
 
-	for _, dir := range schemaSet.List() {
-		sourceDirs = append(sourceDirs, dir.(string))
-		id = id + "|" + dir.(string)
+	for _, source := range schemaSet.List() {
+		sources = append(sources, source.(string))
+		id = id + "|" + source.(string)
 	}
 
-	hash, err := hashOfDirs(sourceDirs)
+	hash, err := hashOfDirsAndFiles(sources)
 	if err != nil {
 		return errors.Wrap(err, "while calculating hash of source dirs")
 	}
@@ -56,12 +56,22 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func hashOfDirs(dirs []string) ([]byte, error) {
+func hashOfDirsAndFiles(dirs []string) ([]byte, error) {
 
 	dataFiles := map[string]struct{}{}
 
-	for _, dir := range dirs {
-		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	for _, f := range dirs {
+		fs, err := os.Stat(f)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting fstat of %s", f)
+		}
+
+		if fs.Mode().IsRegular() {
+			dataFiles[f] = struct{}{}
+			continue
+		}
+
+		err = filepath.Walk(f, func(path string, info os.FileInfo, err error) error {
 			if info.Mode().IsRegular() {
 				dataFiles[path] = struct{}{}
 			}
@@ -69,7 +79,7 @@ func hashOfDirs(dirs []string) ([]byte, error) {
 		})
 
 		if err != nil {
-			return nil, errors.Wrapf(err, "while reading dir %s", dir)
+			return nil, errors.Wrapf(err, "while reading dir %s", f)
 		}
 	}
 

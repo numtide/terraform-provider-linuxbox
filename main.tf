@@ -47,7 +47,7 @@ resource "linuxbox_docker_copy_image" "service" {
 }
 
 data "linuxbox_source_hash" "sample_service" {
-    source_dirs = ["sample_service"]
+    sources = ["sample_service"]
 }
 
 resource "linuxbox_docker_build" "sample_service" {
