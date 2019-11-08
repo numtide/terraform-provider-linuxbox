@@ -60,11 +60,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	sourceHash := d.Get("source_hash").(string)
 	sourceDir := d.Get("source_dir").(string)
 
-	imageID := fmt.Sprintf("sourcebuild:%s", sourceHash)
+	imageTag := fmt.Sprintf("sourcebuild:%s", sourceHash)
 
-	_, _, err = dc.ImageInspectWithRaw(context.Background(), imageID)
+	ii, _, err := dc.ImageInspectWithRaw(context.Background(), imageTag)
 
 	if !client.IsErrNotFound(err) {
+		d.Set("image_id", ii.ID)
 		d.SetId(sourceHash)
 		return resourceRead(d, m)
 	}
@@ -92,7 +93,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	defer rc.Close()
 
 	ibResponse, err := dc.ImageBuild(context.Background(), rc, types.ImageBuildOptions{
-		Tags:       []string{imageID},
+		Tags:       []string{imageTag},
 		Dockerfile: d.Get("dockerfile").(string),
 	})
 
@@ -137,7 +138,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	ii, _, err := dc.ImageInspectWithRaw(context.Background(), lastID)
+	ii, _, err = dc.ImageInspectWithRaw(context.Background(), lastID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting image with id %s", lastID)
 	}
