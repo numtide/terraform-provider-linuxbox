@@ -74,6 +74,8 @@ resource "linuxbox_docker_container" "webpage" {
     caps = ["IPC_LOCK"]
 
     restart = "unless-stopped"
+
+    network = "bridge"
 }
 
 resource "linuxbox_docker_container" "traefik" {

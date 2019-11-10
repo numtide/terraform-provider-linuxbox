@@ -90,6 +90,12 @@ func Resource() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"network": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
 			"args": &schema.Schema{
 				Type: schema.TypeList,
 				Elem: &schema.Schema{
@@ -171,6 +177,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	if nameSet {
 		cmd = append(cmd, "--name", shellescape.Quote(name.(string)))
+	}
+
+	network, networkSet := d.GetOkExists("network")
+
+	if networkSet {
+		cmd = append(cmd, "--network", shellescape.Quote(network.(string)))
 	}
 
 	labelsMap := d.Get("labels").(map[string]interface{})
