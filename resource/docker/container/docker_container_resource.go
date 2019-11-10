@@ -48,6 +48,15 @@ func Resource() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"caps": &schema.Schema{
+				Type: schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Optional: true,
+				ForceNew: true,
+			},
+
 			"volumes": &schema.Schema{
 				Type: schema.TypeSet,
 				Elem: &schema.Schema{
@@ -186,6 +195,19 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	if len(ports) > 0 {
 		for _, p := range ports {
 			cmd = append(cmd, "-p", shellescape.Quote(p))
+		}
+	}
+
+	capsSet := d.Get("caps").(*schema.Set)
+	caps := []string{}
+
+	for _, p := range capsSet.List() {
+		caps = append(caps, p.(string))
+	}
+
+	if len(caps) > 0 {
+		for _, c := range caps {
+			cmd = append(cmd, fmt.Sprintf("--cap-add=%s", shellescape.Quote(c)))
 		}
 	}
 

@@ -71,6 +71,8 @@ resource "linuxbox_docker_container" "webpage" {
 
     name = "nginx"
 
+    caps = ["IPC_LOCK"]
+
     restart = "unless-stopped"
 }
 
