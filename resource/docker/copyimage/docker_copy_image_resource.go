@@ -3,7 +3,9 @@ package copyimage
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
+	"os"
 	"time"
 
 	"github.com/docker/docker/client"
@@ -32,7 +34,10 @@ func Resource() *schema.Resource {
 			},
 			"image_id": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
+				ForceNew: true,
+			},
+			"image_path": &schema.Schema{
+				Type:     schema.TypeString,
 				ForceNew: true,
 			},
 		},
@@ -46,19 +51,40 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return errors.Wrap(err, "while creating docker client")
 	}
 
-	imageID := d.Get("image_id").(string)
+	imageID := d.Get("image_id")
+	imagePath := d.Get("image_path")
 
-	rc, err := dc.ImageSave(context.Background(), []string{imageID})
-	if err != nil {
-		return errors.Wrapf(err, "while saving image %s", imageID)
+	if imageID == nil && imagePath == nil {
+		return errors.New("argument error: one of image_id or image_path must be passed")
 	}
 
-	defer rc.Close()
+	if imageID != nil && imagePath != nil {
+		return errors.New("argument error: only one of image_id or image_path must be passed")
+	}
+
+	var (
+		r io.ReadCloser
+		resourceID string
+	)
+
+	if imageID != nil {
+		resourceID = imageID.(string)
+		r, err = dc.ImageSave(context.Background(), []string{resourceID})
+		if err != nil {
+			return errors.Wrapf(err, "image_id: while saving image %s", resourceID)
+		}
+	} else {
+		resourceID = imagePath.(string)
+		r, err = os.Open(resourceID)
+		if err != nil {
+			return errors.Wrapf(err, "image_path: while saving image %s", resourceID)
+		}
+	}
+	defer r.Close()
 
 	privateKeyBytes := d.Get("ssh_key").(string)
 
 	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(privateKeyBytes), []byte{})
-
 	if err != nil {
 		return errors.Wrap(err, "while parsing private ssh_key")
 	}
@@ -100,13 +126,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	defer session.Close()
 
-	session.Stdin = rc
+	session.Stdin = r
 	output, err := session.Output("docker load")
 	if err != nil {
 		return errors.Wrapf(err, "error while executing `docker load` via ssh: %s", string(output))
 	}
 
-	d.SetId(imageID)
+	d.SetId(resourceID)
 
 	return resourceRead(d, m)
 }
