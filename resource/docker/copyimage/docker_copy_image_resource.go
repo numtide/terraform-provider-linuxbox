@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/docker/docker/client"
@@ -132,10 +133,17 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		return errors.Wrapf(err, "error while executing `docker load` via ssh: %s", string(output))
 	}
 
-	d.SetId(resourceID)
+	res := reImage.FindStringSubmatch(string(output))
+	if len(res) < 2 {
+		return fmt.Errorf("Could not find image ID in: %s", string(output))
+	}
+
+	d.SetId(res[1])
 
 	return resourceRead(d, m)
 }
+
+var reImage = regexp.MustCompile("Loaded image: ([^ ]+)")
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	return nil
