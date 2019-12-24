@@ -35,10 +35,12 @@ func Resource() *schema.Resource {
 			},
 			"image_id": &schema.Schema{
 				Type:     schema.TypeString,
+				Optional: true,
 				ForceNew: true,
 			},
 			"image_path": &schema.Schema{
 				Type:     schema.TypeString,
+				Optional: true,
 				ForceNew: true,
 			},
 		},
