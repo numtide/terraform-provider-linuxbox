@@ -36,7 +36,6 @@ func Resource() *schema.Resource {
 			"image_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: true,
 			},
 
 			"ports": &schema.Schema{
@@ -45,7 +44,6 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
-				ForceNew: true,
 			},
 
 			"caps": &schema.Schema{
@@ -54,7 +52,6 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
-				ForceNew: true,
 			},
 
 			"volumes": &schema.Schema{
@@ -63,7 +60,6 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
-				ForceNew: true,
 			},
 
 			"labels": &schema.Schema{
@@ -72,7 +68,6 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
-				ForceNew: true,
 			},
 
 			"env": &schema.Schema{
@@ -81,19 +76,16 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
-				ForceNew: true,
 			},
 
 			"restart": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
 			},
 
 			"network": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
 			},
 
 			"args": &schema.Schema{
@@ -102,13 +94,11 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 				Optional: true,
-				ForceNew: true,
 			},
 
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
 			},
 
 			"container_id": &schema.Schema{
@@ -121,40 +111,9 @@ func Resource() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
-	privateKeyBytes := d.Get("ssh_key").(string)
-
-	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(privateKeyBytes), []byte{})
-
+	client, err := createSSHClient(d)
 	if err != nil {
-		return errors.Wrap(err, "while parsing private ssh_key")
-	}
-
-	config := &ssh.ClientConfig{
-		User: "root",
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	server := d.Get("host_address").(string)
-
-	addr := fmt.Sprintf("%s:22", server)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
-	for {
-		c, err := (&net.Dialer{}).DialContext(ctx, "tcp", addr)
-		if err == nil {
-			c.Close()
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
-	cancel()
-
-	client, err := ssh.Dial("tcp", addr, config)
-	if err != nil {
-		return errors.Wrapf(err, "while ssh dialing %s", server)
+		return errors.Wrap(err, "while creating ssh client")
 	}
 
 	defer client.Close()
@@ -264,48 +223,52 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
+	client, err := createSSHClient(d)
+	if err != nil {
+		return errors.Wrap(err, "while creating ssh client")
+	}
+
+	containerID := d.Get("container_id").(string)
+
+	if containerID != "" {
+		cmd := fmt.Sprintf("docker inspect %s", containerID)
+		_, err := runInSession(client, cmd)
+		if err != nil {
+			// return errors.Wrapf(err, "while running `%s`: %s", cmd, string(output))
+			d.SetId("")
+		}
+	}
+
 	return nil
 }
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
-	return resourceRead(d, m)
+
+	client, err := createSSHClient(d)
+	if err != nil {
+		return errors.Wrap(err, "while creating ssh client")
+	}
+
+	defer client.Close()
+
+	containerID := d.Get("container_id").(string)
+
+	if containerID != "" {
+		// TODO: delete container
+		cmd := fmt.Sprintf("docker rm -fv %s", containerID)
+		output, err := runInSession(client, cmd)
+		if err != nil {
+			return errors.Wrapf(err, "while running `%s`: %s", cmd, string(output))
+		}
+	}
+
+	return resourceCreate(d, m)
 }
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
-	privateKeyBytes := d.Get("ssh_key").(string)
-
-	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(privateKeyBytes), []byte{})
-
+	client, err := createSSHClient(d)
 	if err != nil {
-		return errors.Wrap(err, "while parsing private ssh_key")
-	}
-
-	config := &ssh.ClientConfig{
-		User: "root",
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	server := d.Get("host_address").(string)
-
-	addr := fmt.Sprintf("%s:22", server)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
-	for {
-		c, err := (&net.Dialer{}).DialContext(ctx, "tcp", addr)
-		if err == nil {
-			c.Close()
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
-	cancel()
-
-	client, err := ssh.Dial("tcp", addr, config)
-	if err != nil {
-		return errors.Wrapf(err, "while ssh dialing %s", server)
+		return errors.Wrap(err, "while creating ssh client")
 	}
 
 	defer client.Close()
@@ -334,4 +297,45 @@ func runInSession(c *ssh.Client, command string) ([]byte, error) {
 	}
 	defer session.Close()
 	return session.Output(command)
+}
+
+func createSSHClient(d *schema.ResourceData) (*ssh.Client, error) {
+	privateKeyBytes := d.Get("ssh_key").(string)
+
+	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(privateKeyBytes), []byte{})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing private ssh_key")
+	}
+
+	config := &ssh.ClientConfig{
+		User: "root",
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	server := d.Get("host_address").(string)
+
+	addr := fmt.Sprintf("%s:22", server)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
+	for {
+		c, err := (&net.Dialer{}).DialContext(ctx, "tcp", addr)
+		if err == nil {
+			c.Close()
+			break
+		}
+		time.Sleep(1 * time.Second)
+	}
+	cancel()
+
+	client, err := ssh.Dial("tcp", addr, config)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while ssh dialing %s", server)
+	}
+
+	return client, nil
+
 }

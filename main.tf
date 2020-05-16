@@ -62,7 +62,7 @@ resource "linuxbox_docker_container" "webpage" {
     labels = {
         "traefik.enable" = "true"
         "traefik.port" = "80"
-        "traefik.frontend.rule" = "Host:${digitalocean_droplet.test.ipv4_address}.xip.io"
+        "traefik.frontend.rule" = "Host:${digitalocean_droplet.test.ipv4_address}.nip.io"
     }
     
     env = {
