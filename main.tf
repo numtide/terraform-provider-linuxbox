@@ -62,7 +62,7 @@ resource "linuxbox_docker_container" "webpage" {
     labels = {
         "traefik.enable" = "true"
         "traefik.port" = "80"
-        "traefik.frontend.rule" = "Host:${digitalocean_droplet.test.ipv4_address}.xip.io"
+        "traefik.frontend.rule" = "Host:${digitalocean_droplet.test.ipv4_address}.nip.io"
     }
     
     env = {
@@ -113,7 +113,7 @@ resource "linuxbox_docker_container" "traefik" {
         "--acme.email=dragan@netice9.com",
         "--acme.tlsconfig=true",
         "--acme.storage=/acme/certs.json",
-        // "--providers.docker.endpoint=unix:///var/run/docker.sock",
+        # "--providers.docker.endpoint=unix:///var/run/docker.sock",
     ]
 
     name = "traefik"
