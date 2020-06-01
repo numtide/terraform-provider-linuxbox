@@ -29,6 +29,12 @@ func Resource() *schema.Resource {
 				Sensitive: true,
 			},
 
+			"ssh_user": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: false,
+				Default:  "root",
+			},
+
 			"host_address": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
@@ -491,8 +497,10 @@ func createSSHClient(d *schema.ResourceData) (*ssh.Client, error) {
 		return nil, errors.Wrap(err, "while parsing private ssh_key")
 	}
 
+	sshUser := d.Get("ssh_user").(string)
+
 	config := &ssh.ClientConfig{
-		User: "root",
+		User: sshUser,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(signer),
 		},
