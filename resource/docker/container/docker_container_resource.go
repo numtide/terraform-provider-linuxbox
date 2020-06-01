@@ -33,6 +33,7 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: false,
 				Default:  "root",
+				Optional: true,
 			},
 
 			"host_address": &schema.Schema{
