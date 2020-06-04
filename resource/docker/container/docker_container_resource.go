@@ -234,6 +234,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 	client, err := createSSHClient(d)
 	if err != nil {
+		if isConnectTimeout(err) {
+			d.SetId("")
+			return nil
+		}
 		return errors.Wrap(err, "while creating ssh client")
 	}
 
@@ -480,6 +484,16 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
+func isConnectTimeout(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	msg := err.Error()
+	return strings.Contains(msg, "timed out while connecting to ssh")
+
+}
+
 func runInSession(c *ssh.Client, command string) ([]byte, error) {
 	session, err := c.NewSession()
 	if err != nil {
@@ -512,12 +526,17 @@ func createSSHClient(d *schema.ResourceData) (*ssh.Client, error) {
 
 	addr := fmt.Sprintf("%s:22", server)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	for {
-		c, err := (&net.Dialer{}).DialContext(ctx, "tcp", addr)
+		c, err := (&net.Dialer{
+			Timeout: 15 * time.Second,
+		}).DialContext(ctx, "tcp", addr)
 		if err == nil {
 			c.Close()
 			break
+		}
+		if ctx.Err() != nil {
+			return nil, errors.Wrap(err, "timed out while connecting to ssh")
 		}
 		time.Sleep(1 * time.Second)
 	}
