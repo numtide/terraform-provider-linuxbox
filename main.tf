@@ -40,6 +40,14 @@ resource "linuxbox_docker_network" "test_network" {
     name = "test"
 }
 
+resource "linuxbox_docker_run" "test_run" {
+    depends_on = [ linuxbox_docker.docker ]
+    host_address = digitalocean_droplet.test.ipv4_address
+    ssh_key = tls_private_key.ssh_key.private_key_pem
+    image_id = "alpine:latest"
+    args = ["echo","foo"]
+}
+
 resource "linuxbox_ssh_authorized_key" "docker" {
     host_address = digitalocean_droplet.test.ipv4_address
     ssh_key = tls_private_key.ssh_key.private_key_pem

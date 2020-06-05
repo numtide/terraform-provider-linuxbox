@@ -8,6 +8,7 @@ import (
 	"github.com/draganm/terraform-provider-linuxbox/resource/docker/container"
 	"github.com/draganm/terraform-provider-linuxbox/resource/docker/copyimage"
 	"github.com/draganm/terraform-provider-linuxbox/resource/docker/network"
+	"github.com/draganm/terraform-provider-linuxbox/resource/docker/run"
 	"github.com/draganm/terraform-provider-linuxbox/resource/ssh/authorizedkey"
 	"github.com/draganm/terraform-provider-linuxbox/resource/swap"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -28,6 +29,7 @@ func Provider() *schema.Provider {
 			"linuxbox_docker_container":   container.Resource(),
 			"linuxbox_docker_auth":        auth.Resource(),
 			"linuxbox_docker_network":     network.Resource(),
+			"linuxbox_docker_run":         run.Resource(),
 		},
 	}
 }
