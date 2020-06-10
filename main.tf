@@ -130,6 +130,8 @@ resource "linuxbox_docker_container" "traefik" {
 
   restart = "unless-stopped"
 
+  privileged = true
+
   args = [
     "--accesslog",
     "--defaultentrypoints=http",

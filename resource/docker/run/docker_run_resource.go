@@ -88,6 +88,12 @@ func Resource() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"privileged": &schema.Schema{
+				Type:     schema.TypeBool,
+				Default:  false,
+				Optional: true,
+			},
+
 			"network": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -188,6 +194,11 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 		for _, v := range volumes {
 			cmd = append(cmd, "-v", shellescape.Quote(v))
 		}
+	}
+	privileged := d.Get("privileged").(bool)
+
+	if privileged {
+		cmd = append(cmd, "--privileged")
 	}
 
 	cmd = append(cmd, shellescape.Quote(imageID))

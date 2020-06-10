@@ -55,6 +55,12 @@ func Resource() *schema.Resource {
 				Optional: true,
 			},
 
+			"privileged": &schema.Schema{
+				Type:     schema.TypeBool,
+				Default:  false,
+				Optional: true,
+			},
+
 			"caps": &schema.Schema{
 				Type: schema.TypeSet,
 				Elem: &schema.Schema{
@@ -145,6 +151,12 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	if nameSet {
 		cmd = append(cmd, "--name", shellescape.Quote(name.(string)))
+	}
+
+	privileged := d.Get("privileged").(bool)
+
+	if privileged {
+		cmd = append(cmd, "--privileged")
 	}
 
 	network, networkSet := d.GetOkExists("network")
@@ -333,6 +345,9 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		if networkIsSet {
 			d.Set("network", containerData.HostConfig.NetworkMode)
 		}
+
+		privileged := containerData.HostConfig.Privileged
+		d.Set("privileged", privileged)
 
 		// labels
 		_, labelsAreSet := d.GetOkExists("labels")
