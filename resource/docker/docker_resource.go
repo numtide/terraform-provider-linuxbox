@@ -13,10 +13,11 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceCreate,
-		Read:   resourceRead,
-		Update: resourceUpdate,
-		Delete: resourceDelete,
+		Create:             resourceCreate,
+		Read:               resourceRead,
+		Update:             resourceUpdate,
+		Delete:             resourceDelete,
+		DeprecationMessage: "This resource is deprecated, please use linuxbox_run_setup instead",
 
 		Schema: map[string]*schema.Schema{
 			"ssh_key": &schema.Schema{
