@@ -1,18 +1,15 @@
 package container
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"strings"
-	"time"
 
 	"github.com/alessio/shellescape"
 	"github.com/docker/docker/api/types"
+	"github.com/draganm/terraform-provider-linuxbox/sshsession"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/ssh"
 )
 
 func Resource() *schema.Resource {
@@ -126,12 +123,12 @@ func Resource() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
-	client, err := createSSHClient(d)
+	session, err := sshsession.Open(d)
 	if err != nil {
-		return errors.Wrap(err, "while creating ssh client")
+		return errors.Wrap(err, "while creating ssh session")
 	}
 
-	defer client.Close()
+	defer session.Close()
 
 	imageID := d.Get("image_id").(string)
 
@@ -224,9 +221,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	line := strings.Join(cmd, " ")
 
-	output, err := runInSession(client, line)
+	output, stderr, err := session.RunInSession(line)
 	if err != nil {
-		return errors.Wrapf(err, "while running `%s`: %s", line, string(output))
+		return errors.Wrapf(err, "while running `%s`:\nSTDOUT:\n%s\nSTDERR:\n%s\n", line, string(output), string(stderr))
 	}
 
 	outputLines := strings.Split(string(output), "\n")
@@ -244,9 +241,10 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
-	client, err := createSSHClient(d)
+
+	session, err := sshsession.Open(d)
 	if err != nil {
-		if isConnectTimeout(err) {
+		if sshsession.IsConnectTimeout(err) {
 			d.SetId("")
 			return nil
 		}
@@ -257,14 +255,14 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	if containerID != "" {
 		cmd := fmt.Sprintf("docker container inspect %s", containerID)
-		output, err := runInSession(client, cmd)
+		output, _, err := session.RunInSession(cmd)
 		if err != nil {
 			// container does not exist
 			name, nameIsSet := d.GetOkExists("name")
 			if nameIsSet {
 				// try inspecting by name, this can happen when `docker run` fails
 				cmd = fmt.Sprintf("docker container inspect %s", name)
-				output, err = runInSession(client, cmd)
+				output, _, err = session.RunInSession(cmd)
 				if err != nil {
 					// definitely does not exist, let the terraform know!
 					d.SetId("")
@@ -307,9 +305,9 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		imageID := d.Get("image_id").(string)
 
 		cmd = fmt.Sprintf("docker image inspect %s", imageID)
-		output, err = runInSession(client, cmd)
+		output, stderr, err := session.RunInSession(cmd)
 		if err != nil {
-			errors.Wrapf(err, "while inspecting image %s", imageID)
+			errors.Wrapf(err, "while inspecting image %s:\nSTDOUT:\n%s\nSTDERR:\n%s\n", imageID, string(output), string(stderr))
 		}
 
 		parsedImages := []types.ImageInspect{}
@@ -454,20 +452,19 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
-	client, err := createSSHClient(d)
+	session, err := sshsession.Open(d)
 	if err != nil {
-		return errors.Wrap(err, "while creating ssh client")
+		return errors.Wrap(err, "while creating ssh session")
 	}
-
-	defer client.Close()
+	defer session.Close()
 
 	containerID := d.Get("container_id").(string)
 
 	if containerID != "" {
 		cmd := fmt.Sprintf("docker rm -fv %s", containerID)
-		output, err := runInSession(client, cmd)
+		output, stderr, err := session.RunInSession(cmd)
 		if err != nil {
-			return errors.Wrapf(err, "while running `%s`: %s", cmd, string(output))
+			return errors.Wrapf(err, "while running `%s`:\nSTDOUT:\n%s\nSTDERR:\n%s\n", cmd, string(output), string(stderr))
 		}
 	}
 
@@ -475,12 +472,11 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
-	client, err := createSSHClient(d)
+	session, err := sshsession.Open(d)
 	if err != nil {
-		return errors.Wrap(err, "while creating ssh client")
+		return errors.Wrap(err, "while creating ssh session")
 	}
-
-	defer client.Close()
+	defer session.Close()
 
 	cmd := []string{
 		"docker",
@@ -491,77 +487,10 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 	line := strings.Join(cmd, " ")
 
-	output, err := runInSession(client, line)
+	output, stderr, err := session.RunInSession(line)
 	if err != nil {
-		return errors.Wrapf(err, "while running `%s`: %s", line, string(output))
+		return errors.Wrapf(err, "while running `%s`:\nSTDOUT:\n%s\nSTDERR:\n%s\n", line, string(output), string(stderr))
 	}
 
 	return nil
-}
-
-func isConnectTimeout(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	msg := err.Error()
-	return strings.Contains(msg, "timed out while connecting to ssh")
-
-}
-
-func runInSession(c *ssh.Client, command string) ([]byte, error) {
-	session, err := c.NewSession()
-	if err != nil {
-		return nil, errors.Wrap(err, "while open ssh session")
-	}
-	defer session.Close()
-	return session.Output(command)
-}
-
-func createSSHClient(d *schema.ResourceData) (*ssh.Client, error) {
-	privateKeyBytes := d.Get("ssh_key").(string)
-
-	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(privateKeyBytes), []byte{})
-
-	if err != nil {
-		return nil, errors.Wrap(err, "while parsing private ssh_key")
-	}
-
-	sshUser := d.Get("ssh_user").(string)
-
-	config := &ssh.ClientConfig{
-		User: sshUser,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	server := d.Get("host_address").(string)
-
-	addr := fmt.Sprintf("%s:22", server)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	for {
-		c, err := (&net.Dialer{
-			Timeout: 15 * time.Second,
-		}).DialContext(ctx, "tcp", addr)
-		if err == nil {
-			c.Close()
-			break
-		}
-		if ctx.Err() != nil {
-			return nil, errors.Wrap(err, "timed out while connecting to ssh")
-		}
-		time.Sleep(1 * time.Second)
-	}
-	cancel()
-
-	client, err := ssh.Dial("tcp", addr, config)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while ssh dialing %s", server)
-	}
-
-	return client, nil
-
 }
