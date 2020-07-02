@@ -7,8 +7,8 @@ import (
 
 	"github.com/alessio/shellescape"
 	"github.com/docker/docker/api/types"
-	"github.com/draganm/terraform-provider-linuxbox/sshsession"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/numtide/terraform-provider-linuxbox/sshsession"
 	"github.com/pkg/errors"
 )
 

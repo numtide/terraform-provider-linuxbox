@@ -1,8 +1,8 @@
 package runsetup
 
 import (
-	"github.com/draganm/terraform-provider-linuxbox/sshsession"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/numtide/terraform-provider-linuxbox/sshsession"
 	"github.com/pkg/errors"
 )
 

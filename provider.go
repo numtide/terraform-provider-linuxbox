@@ -1,18 +1,18 @@
 package main
 
 import (
-	"github.com/draganm/terraform-provider-linuxbox/datasource/sourcehash"
-	"github.com/draganm/terraform-provider-linuxbox/resource/docker"
-	"github.com/draganm/terraform-provider-linuxbox/resource/docker/auth"
-	"github.com/draganm/terraform-provider-linuxbox/resource/docker/build"
-	"github.com/draganm/terraform-provider-linuxbox/resource/docker/container"
-	"github.com/draganm/terraform-provider-linuxbox/resource/docker/copyimage"
-	"github.com/draganm/terraform-provider-linuxbox/resource/docker/network"
-	"github.com/draganm/terraform-provider-linuxbox/resource/docker/run"
-	"github.com/draganm/terraform-provider-linuxbox/resource/runsetup"
-	"github.com/draganm/terraform-provider-linuxbox/resource/ssh/authorizedkey"
-	"github.com/draganm/terraform-provider-linuxbox/resource/swap"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/numtide/terraform-provider-linuxbox/datasource/sourcehash"
+	"github.com/numtide/terraform-provider-linuxbox/resource/docker"
+	"github.com/numtide/terraform-provider-linuxbox/resource/docker/auth"
+	"github.com/numtide/terraform-provider-linuxbox/resource/docker/build"
+	"github.com/numtide/terraform-provider-linuxbox/resource/docker/container"
+	"github.com/numtide/terraform-provider-linuxbox/resource/docker/copyimage"
+	"github.com/numtide/terraform-provider-linuxbox/resource/docker/network"
+	"github.com/numtide/terraform-provider-linuxbox/resource/docker/run"
+	"github.com/numtide/terraform-provider-linuxbox/resource/runsetup"
+	"github.com/numtide/terraform-provider-linuxbox/resource/ssh/authorizedkey"
+	"github.com/numtide/terraform-provider-linuxbox/resource/swap"
 )
 
 func Provider() *schema.Provider {

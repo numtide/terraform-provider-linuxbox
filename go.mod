@@ -1,4 +1,4 @@
-module github.com/draganm/terraform-provider-linuxbox
+module github.com/numtide/terraform-provider-linuxbox
 
 go 1.13
 
