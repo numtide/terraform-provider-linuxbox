@@ -1,6 +1,7 @@
 # `linuxbox_run_setup` Resource
 
-TODO
+Executes setup scripts on the target host. This is mainly useful to configure
+machines after startup.
 
 ## Example Usage
 

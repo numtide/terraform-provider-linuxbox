@@ -12,6 +12,7 @@ TODO
 
 ## Resources
 
+* [linuxbox_docker_run](resources/docker_run.md)
 * [linuxbox_run_setup](resources/run_setup.md)
 * [linuxbox_ssh_authorized_key](resources/ssh_authorized_key.md)
 * [linuxbox_swap](resources/swap.md)
