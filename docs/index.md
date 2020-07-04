@@ -8,8 +8,9 @@ TODO
 
 ## Data Sources
 
-* [linuxbox_source_hash](data-sources/linuxbox_source_hash.md)
+* [linuxbox_source_hash](data-sources/source_hash.md)
 
 ## Resources
 
-* [linuxbox_swap](resources/linuxbox_swap.md)
+* [linuxbox_swap](resources/swap.md)
+* [linuxbox_ssh_authorized_key](resources/ssh_authorized_key.md)
