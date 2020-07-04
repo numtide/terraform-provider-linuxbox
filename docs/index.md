@@ -12,6 +12,7 @@ TODO
 
 ## Resources
 
+* [linuxbox_docker_auth](resources/docker_auth.md)
 * [linuxbox_docker_build](resources/docker_build.md)
 * [linuxbox_docker_container](resources/docker_container.md)
 * [linuxbox_docker_copy_image](resources/docker_copy_image.md)
