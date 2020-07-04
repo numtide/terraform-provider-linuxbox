@@ -1,4 +1,4 @@
-# linuxbox_ssh_authorized_key Resources
+# `linuxbox_ssh_authorized_key` Resource
 
 Adds a SSH public key to the `.ssh/authorized_keys` file on the target host.
 
@@ -20,6 +20,7 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGB1Pog97SWdV2UEA40V+3bML+lSZXEd48zCRlS/eG
 
 * `host_address` - (Required) Machine hostname to connect to.
 * `ssh_key`      - (Required) Machine SSH key to connect to.
+
 * `key_to_add`   - (Required) SSH public key to add to the machine.
 
 ## Attribute Reference

@@ -1,4 +1,4 @@
-# linuxbox_swap Resources
+# `linuxbox_swap` Resource
 
 Creates and mounts a `/swapfile` in the target machine.
 
@@ -18,6 +18,7 @@ resource "linuxbox_swap" "my_instance" {
 
 * `host_address` - (Required) Machine hostname to connect to.
 * `ssh_key`      - (Required) Machine SSH key to connect to.
+
 * `swap_size`    - (Required) Size of the swap, in bytes.
 
 ## Attribute Reference
