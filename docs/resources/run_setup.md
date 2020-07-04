@@ -28,8 +28,8 @@ resource "linuxbox_run_setup" "install_docker" {
 ## Argument Reference
 
 * `host_address` - (Required) Machine hostname to connect to.
-* `ssh_key`      - (Required) Machine SSH key to connect to.
-* `ssh_user`     - (Optional) Machine SSH user.
+* `ssh_key`      - (Required) Machine SSH key to connect with.
+* `ssh_user`     - (Optional) Machine SSH user to connect with (default: "root").
 
 * `setup`        - (Required) A list of commands to run.
 * `check`        - (Optional) Verify if the setup needs to run.

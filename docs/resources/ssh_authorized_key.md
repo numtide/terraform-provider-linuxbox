@@ -19,7 +19,8 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGB1Pog97SWdV2UEA40V+3bML+lSZXEd48zCRlS/eG
 ## Argument Reference
 
 * `host_address` - (Required) Machine hostname to connect to.
-* `ssh_key`      - (Required) Machine SSH key to connect to.
+* `ssh_key`      - (Required) Machine SSH key to connect with.
+* `ssh_user`     - (Optional) Machine SSH user to connect with (default: "root").
 
 * `key_to_add`   - (Required) SSH public key to add to the machine.
 

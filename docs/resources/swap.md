@@ -17,7 +17,8 @@ resource "linuxbox_swap" "my_instance" {
 ## Argument Reference
 
 * `host_address` - (Required) Machine hostname to connect to.
-* `ssh_key`      - (Required) Machine SSH key to connect to.
+* `ssh_key`      - (Required) Machine SSH key to connect with.
+* `ssh_user`     - (Optional) Machine SSH user to connect with (default: "root").
 
 * `swap_size`    - (Required) Size of the swap, in bytes.
 

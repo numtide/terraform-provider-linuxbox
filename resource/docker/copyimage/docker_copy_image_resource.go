@@ -20,15 +20,21 @@ func Resource() *schema.Resource {
 		Delete: resourceDelete,
 
 		Schema: map[string]*schema.Schema{
+			"host_address": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
 			"ssh_key": &schema.Schema{
 				Type:      schema.TypeString,
 				Required:  true,
 				Sensitive: true,
 			},
-			"host_address": &schema.Schema{
+			"ssh_user": &schema.Schema{
 				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Required: false,
+				Default:  "root",
+				Optional: true,
 			},
 			"image_id": &schema.Schema{
 				Type:     schema.TypeString,
@@ -56,6 +62,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	defer rc.Close()
 
 	privateKeyBytes := d.Get("ssh_key").(string)
+	sshUser := d.Get("ssh_user").(string)
 
 	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(privateKeyBytes), []byte{})
 
@@ -64,7 +71,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	config := &ssh.ClientConfig{
-		User: "root",
+		User: sshUser,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(signer),
 		},

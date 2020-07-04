@@ -22,9 +22,9 @@ resource "linuxbox_docker_build" "my_image" {
 
 ## Argument Reference
 
-* `source_dir` - (Required) Folder path to build.
+* `source_dir`  - (Required) Folder path to build.
 * `source_hash` - (Required) Hash of the source.
-* `dockerfile` - (Optional) Defaults to `./Dockerfile`.
+* `dockerfile`  - (Optional) Defaults to `./Dockerfile`.
 
 ## Attribute Reference
 
