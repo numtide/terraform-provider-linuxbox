@@ -124,13 +124,6 @@ func Resource() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
-	ss, err := sshsession.Open(d)
-	if err != nil {
-		return errors.Wrap(err, "while opening ssh session")
-	}
-
-	defer ss.Close()
-
 	imageID := d.Get("image_id").(string)
 
 	cmd := []string{
@@ -209,7 +202,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	line := strings.Join(cmd, " ")
 
-	stdout, stderr, err := ss.RunInSession(line)
+	stdout, stderr, err := sshsession.Run(d, line)
 	if err != nil {
 		return errors.Wrapf(err, "while running `%s`\nstdout:\n%s\nstderr:\n%s\n", line, string(stdout), string(stderr))
 	}

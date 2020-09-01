@@ -49,13 +49,6 @@ func Resource() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
-	ssh, err := sshsession.Open(d)
-	if err != nil {
-		return errors.Wrap(err, "while creating ssh session")
-	}
-
-	defer ssh.Close()
-
 	name := d.Get("name").(string)
 
 	cmd := []string{
@@ -67,7 +60,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	line := strings.Join(cmd, " ")
 
-	stdout, stderr, err := ssh.RunInSession(line)
+	stdout, stderr, err := sshsession.Run(d, line)
 	if err != nil {
 		return errors.Wrapf(err, "while running `%s`: %s", line, string(stderr))
 	}
@@ -81,14 +74,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 
-	ssh, err := sshsession.Open(d)
-	if err != nil {
-		return errors.Wrap(err, "while creating ssh session")
-	}
-
-	defer ssh.Close()
-
-	stdout, _, err := ssh.RunInSession(fmt.Sprintf("docker network inspect %s", d.Id()))
+	stdout, _, err := sshsession.Run(d, fmt.Sprintf("docker network inspect %s", d.Id()))
 	if sshsession.IsExecError(err) {
 		d.SetId("")
 		return nil
@@ -121,14 +107,14 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
-	ssh, err := sshsession.Open(d)
+
+	cmd := fmt.Sprintf("docker network rm %s", d.Id())
+
+	stdout, stderr, err := sshsession.Run(d, cmd)
+
 	if err != nil {
-		return errors.Wrap(err, "while creating ssh session")
+		errors.Wrapf(err, "error while executing `%s` via ssh STDOUT:\n%s\nSTDERR:%s\n", cmd, string(stdout), string(stderr))
 	}
-
-	defer ssh.Close()
-
-	_, _, err = ssh.RunInSession(fmt.Sprintf("docker network rm %s", d.Id()))
 
 	return err
 }

@@ -57,18 +57,11 @@ func Resource() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
-	ssh, err := sshsession.Open(d)
-	if err != nil {
-		return errors.Wrap(err, "while creating ssh session")
-	}
-
-	defer ssh.Close()
-
 	setup := d.Get("setup").([]interface{})
 
 	for _, sl := range setup {
 		line := sl.(string)
-		stdout, stderr, err := ssh.RunInSession(line)
+		stdout, stderr, err := sshsession.Run(d, line)
 		if err != nil {
 			return errors.Wrapf(err, "error while executing %q\nSTDOUT:\n%s\nSTDERR:\n%s\n", line, string(stdout), string(stderr))
 		}
@@ -81,20 +74,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 
-	ssh, err := sshsession.Open(d)
-	if err != nil {
-		return errors.Wrap(err, "while creating ssh session")
-	}
-
-	defer ssh.Close()
-
 	check, checkSet := d.GetOkExists("check")
 
 	if !checkSet {
 		return nil
 	}
 
-	_, _, err = ssh.RunInSession(check.(string))
+	_, _, err := sshsession.Run(d, check.(string))
 	if sshsession.IsExecError(err) {
 		d.SetId("")
 		return nil
@@ -112,12 +98,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
-	ssh, err := sshsession.Open(d)
-	if err != nil {
-		return errors.Wrap(err, "while creating ssh session")
-	}
-
-	defer ssh.Close()
 
 	delete, deleteSet := d.GetOkExists("delete")
 
@@ -125,7 +105,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
-	stdout, stderr, err := ssh.RunInSession(delete.(string))
+	stdout, stderr, err := sshsession.Run(d, delete.(string))
 	if err != nil {
 		return errors.Wrapf(err, "error while executing %q\nSTDOUT:\n%s\nSTDERR:\n%s\n", delete, string(stdout), string(stderr))
 	}
