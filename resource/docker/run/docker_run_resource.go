@@ -110,26 +110,21 @@ func Resource() *schema.Resource {
 			},
 
 			"stdout": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:      schema.TypeString,
+				Computed:  true,
+				Sensitive: true,
 			},
 
 			"stderr": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:      schema.TypeString,
+				Computed:  true,
+				Sensitive: true,
 			},
 		},
 	}
 }
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
-
-	ss, err := sshsession.Open(d)
-	if err != nil {
-		return errors.Wrap(err, "while opening ssh session")
-	}
-
-	defer ss.Close()
 
 	imageID := d.Get("image_id").(string)
 
@@ -209,7 +204,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	line := strings.Join(cmd, " ")
 
-	stdout, stderr, err := ss.RunInSession(line)
+	stdout, stderr, err := sshsession.Run(d, line)
 	if err != nil {
 		return errors.Wrapf(err, "while running `%s`\nstdout:\n%s\nstderr:\n%s\n", line, string(stdout), string(stderr))
 	}

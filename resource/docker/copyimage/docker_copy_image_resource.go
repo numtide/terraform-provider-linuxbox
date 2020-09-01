@@ -2,14 +2,11 @@ package copyimage
 
 import (
 	"context"
-	"fmt"
-	"net"
-	"time"
 
 	"github.com/docker/docker/client"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/numtide/terraform-provider-linuxbox/sshsession"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/ssh"
 )
 
 func Resource() *schema.Resource {
@@ -61,56 +58,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	defer rc.Close()
 
-	privateKeyBytes := d.Get("ssh_key").(string)
-	sshUser := d.Get("ssh_user").(string)
-
-	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(privateKeyBytes), []byte{})
-
+	output, stderr, err := sshsession.RunWithStdin(d, "docker load", rc)
 	if err != nil {
-		return errors.Wrap(err, "while parsing private ssh_key")
-	}
-
-	config := &ssh.ClientConfig{
-		User: sshUser,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	server := d.Get("host_address").(string)
-
-	addr := fmt.Sprintf("%s:22", server)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
-	for {
-		c, err := (&net.Dialer{}).DialContext(ctx, "tcp", addr)
-		if err == nil {
-			c.Close()
-			break
-		}
-		time.Sleep(1 * time.Second)
-	}
-	cancel()
-
-	sshClient, err := ssh.Dial("tcp", addr, config)
-	if err != nil {
-		return errors.Wrapf(err, "while ssh dialing %s", server)
-	}
-
-	defer sshClient.Close()
-
-	session, err := sshClient.NewSession()
-	if err != nil {
-		return errors.Wrap(err, "while creating ssh session")
-	}
-
-	defer session.Close()
-
-	session.Stdin = rc
-	output, err := session.Output("docker load")
-	if err != nil {
-		return errors.Wrapf(err, "error while executing `docker load` via ssh: %s", string(output))
+		return errors.Wrapf(err, "error while executing `docker load` via ssh STDOUT:\n%s\nSTDERR:%s\n", string(output), string(stderr))
 	}
 
 	d.SetId(imageID)

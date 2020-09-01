@@ -123,13 +123,6 @@ func Resource() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
-	session, err := sshsession.Open(d)
-	if err != nil {
-		return errors.Wrap(err, "while creating ssh session")
-	}
-
-	defer session.Close()
-
 	imageID := d.Get("image_id").(string)
 
 	cmd := []string{
@@ -221,7 +214,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	line := strings.Join(cmd, " ")
 
-	output, stderr, err := session.RunInSession(line)
+	output, stderr, err := sshsession.Run(d, line)
 	if err != nil {
 		return errors.Wrapf(err, "while running `%s`:\nSTDOUT:\n%s\nSTDERR:\n%s\n", line, string(output), string(stderr))
 	}
@@ -242,27 +235,19 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
 
-	session, err := sshsession.Open(d)
-	if err != nil {
-		if sshsession.IsConnectTimeout(err) {
-			d.SetId("")
-			return nil
-		}
-		return errors.Wrap(err, "while creating ssh client")
-	}
-
 	containerID := d.Get("container_id").(string)
 
 	if containerID != "" {
 		cmd := fmt.Sprintf("docker container inspect %s", containerID)
-		output, _, err := session.RunInSession(cmd)
+
+		output, _, err := sshsession.Run(d, cmd)
 		if err != nil {
 			// container does not exist
 			name, nameIsSet := d.GetOkExists("name")
 			if nameIsSet {
 				// try inspecting by name, this can happen when `docker run` fails
 				cmd = fmt.Sprintf("docker container inspect %s", name)
-				output, _, err = session.RunInSession(cmd)
+				output, _, err = sshsession.Run(d, cmd)
 				if err != nil {
 					// definitely does not exist, let the terraform know!
 					d.SetId("")
@@ -305,7 +290,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		imageID := d.Get("image_id").(string)
 
 		cmd = fmt.Sprintf("docker image inspect %s", imageID)
-		output, stderr, err := session.RunInSession(cmd)
+		output, stderr, err := sshsession.Run(d, cmd)
 		if err != nil {
 			errors.Wrapf(err, "while inspecting image %s:\nSTDOUT:\n%s\nSTDERR:\n%s\n", imageID, string(output), string(stderr))
 		}
@@ -452,17 +437,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 
-	session, err := sshsession.Open(d)
-	if err != nil {
-		return errors.Wrap(err, "while creating ssh session")
-	}
-	defer session.Close()
-
 	containerID := d.Get("container_id").(string)
 
 	if containerID != "" {
 		cmd := fmt.Sprintf("docker rm -fv %s", containerID)
-		output, stderr, err := session.RunInSession(cmd)
+		output, stderr, err := sshsession.Run(d, cmd)
 		if err != nil {
 			return errors.Wrapf(err, "while running `%s`:\nSTDOUT:\n%s\nSTDERR:\n%s\n", cmd, string(output), string(stderr))
 		}
@@ -472,11 +451,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
-	session, err := sshsession.Open(d)
-	if err != nil {
-		return errors.Wrap(err, "while creating ssh session")
-	}
-	defer session.Close()
 
 	cmd := []string{
 		"docker",
@@ -487,7 +461,7 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 	line := strings.Join(cmd, " ")
 
-	output, stderr, err := session.RunInSession(line)
+	output, stderr, err := sshsession.Run(d, line)
 	if err != nil {
 		return errors.Wrapf(err, "while running `%s`:\nSTDOUT:\n%s\nSTDERR:\n%s\n", line, string(output), string(stderr))
 	}

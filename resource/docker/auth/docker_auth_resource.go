@@ -1,18 +1,15 @@
 package auth
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
-	"net"
 	"strings"
-	"time"
+
+	"github.com/numtide/terraform-provider-linuxbox/sshsession"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/ssh"
 )
 
 func Resource() *schema.Resource {
@@ -64,13 +61,6 @@ func Resource() *schema.Resource {
 
 func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
-	client, err := createSSHClient(d)
-	if err != nil {
-		return errors.Wrap(err, "while creating ssh client")
-	}
-
-	defer client.Close()
-
 	username := d.Get("username").(string)
 	password := d.Get("password").(string)
 	registryAddress := d.Get("registry_address").(string)
@@ -87,9 +77,9 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	line := strings.Join(cmd, " ")
 
-	output, err := runInSession(client, line)
+	stdout, stderr, err := sshsession.Run(d, line)
 	if err != nil {
-		return errors.Wrapf(err, "while running `%s`: %s", line, string(output))
+		return errors.Wrapf(err, "while running `%s`\nSTDOUT:\n%s\nSTDERR\n%s\n", line, string(stdout), string(stderr))
 	}
 
 	d.SetId(fmt.Sprintf("%s@%s", username, registryAddress))
@@ -98,23 +88,16 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceRead(d *schema.ResourceData, m interface{}) error {
-	log.Println("[DEBUG] host address not changed")
 
-	client, err := createSSHClient(d)
+	stdout, _, err := sshsession.Run(d, "cat ~/.docker/config.json")
 	if err != nil {
-		if isConnectTimeout(err) {
-			log.Println("[DEBUG] connecting to SSH timed out, resource is dead")
-			d.SetId("")
+
+		if sshsession.IsConnectTimeout(err) {
+			// can't reach the host. Possibly the IP has changed, so assume everything is ok.
 			return nil
 		}
-		return errors.Wrap(err, "while creating ssh client")
-	}
 
-	log.Println("[DEBUG] got ssh client")
-
-	output, err := runInSession(client, "cat ~/.docker/config.json")
-	if err != nil {
-		if isExecError(err) {
+		if sshsession.IsExecError(err) {
 			d.SetId("")
 			return nil
 		}
@@ -123,7 +106,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	cfg := &dockerConfig{}
 
-	err = json.Unmarshal(output, cfg)
+	err = json.Unmarshal(stdout, cfg)
 
 	if err != nil {
 		return errors.Wrap(err, "while parsing docker config file")
@@ -167,12 +150,6 @@ func resourceUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
-	client, err := createSSHClient(d)
-	if err != nil {
-		return errors.Wrap(err, "while creating ssh client")
-	}
-
-	defer client.Close()
 
 	registryAddress := d.Get("registry_address").(string)
 
@@ -184,86 +161,16 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 	line := strings.Join(cmd, " ")
 
-	output, err := runInSession(client, line)
+	stdout, stderr, err := sshsession.Run(d, line)
 	if err != nil {
-		return errors.Wrapf(err, "while running `%s`: %s", line, string(output))
+
+		if sshsession.IsConnectTimeout(err) {
+			// if we can't reach the host, probably it's destroyed
+			return nil
+		}
+
+		return errors.Wrapf(err, "while running `%s`\nSTDOUT:\n%s\nSTDERR\n%s\n", line, string(stdout), string(stderr))
 	}
 
 	return nil
-}
-
-func isExecError(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	msg := err.Error()
-	return strings.Contains(msg, "Process exited with status")
-}
-
-func isConnectTimeout(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	msg := err.Error()
-	return strings.Contains(msg, "timed out while connecting to ssh")
-
-}
-
-func runInSession(c *ssh.Client, command string) ([]byte, error) {
-	session, err := c.NewSession()
-	if err != nil {
-		return nil, errors.Wrap(err, "while open ssh session")
-	}
-	defer session.Close()
-	return session.Output(command)
-}
-
-func createSSHClient(d *schema.ResourceData) (*ssh.Client, error) {
-	privateKeyBytes := d.Get("ssh_key").(string)
-
-	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(privateKeyBytes), []byte{})
-
-	if err != nil {
-		return nil, errors.Wrap(err, "while parsing private ssh_key")
-	}
-
-	sshUser := d.Get("ssh_user").(string)
-
-	config := &ssh.ClientConfig{
-		User: sshUser,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	server := d.Get("host_address").(string)
-
-	addr := fmt.Sprintf("%s:22", server)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	for {
-		c, err := (&net.Dialer{
-			Timeout: 15 * time.Second,
-		}).DialContext(ctx, "tcp", addr)
-		if err == nil {
-			c.Close()
-			break
-		}
-		if ctx.Err() != nil {
-			return nil, errors.Wrap(err, "timed out while connecting to ssh")
-		}
-		time.Sleep(1 * time.Second)
-	}
-	cancel()
-
-	client, err := ssh.Dial("tcp", addr, config)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while ssh dialing %s", server)
-	}
-
-	return client, nil
-
 }
