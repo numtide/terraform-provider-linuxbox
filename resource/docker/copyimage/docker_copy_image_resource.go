@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/docker/docker/client"
-	"github.com/numtide/terraform-provider-linuxbox/sshsession"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/numtide/terraform-provider-linuxbox/sshsession"
 	"github.com/pkg/errors"
 )
 
@@ -26,12 +26,6 @@ func Resource() *schema.Resource {
 				Type:      schema.TypeString,
 				Required:  true,
 				Sensitive: true,
-			},
-			"ssh_user": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: false,
-				Default:  "root",
-				Optional: true,
 			},
 			"ssh_user": &schema.Schema{
 				Type:     schema.TypeString,

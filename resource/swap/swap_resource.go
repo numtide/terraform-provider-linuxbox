@@ -32,12 +32,6 @@ func Resource() *schema.Resource {
 				Default:  "root",
 				Optional: true,
 			},
-			"ssh_user": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: false,
-				Default:  "root",
-				Optional: true,
-			},
 			"swap_size": &schema.Schema{
 				Type:     schema.TypeString,
 				ForceNew: true,
