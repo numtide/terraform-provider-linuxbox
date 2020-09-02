@@ -35,6 +35,15 @@ resource "linuxbox_swap" "host_swap" {
 # }
 
 
+resource "linuxbox_text_file" "test_file" {
+  host_address = digitalocean_droplet.test.ipv4_address
+  ssh_key      = tls_private_key.ssh_key.private_key_pem
+  path         = "/tmp/this is a test"
+  content      = "testesttest"
+  owner        = "root"
+  group        = "root"
+}
+
 resource "linuxbox_run_setup" "install_docker" {
   host_address = digitalocean_droplet.test.ipv4_address
   ssh_key      = tls_private_key.ssh_key.private_key_pem

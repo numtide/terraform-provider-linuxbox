@@ -13,6 +13,7 @@ import (
 	"github.com/numtide/terraform-provider-linuxbox/resource/runsetup"
 	"github.com/numtide/terraform-provider-linuxbox/resource/ssh/authorizedkey"
 	"github.com/numtide/terraform-provider-linuxbox/resource/swap"
+	"github.com/numtide/terraform-provider-linuxbox/resource/textfile"
 	"github.com/numtide/terraform-provider-linuxbox/sshsession"
 )
 
@@ -32,6 +33,7 @@ func Provider() *schema.Provider {
 
 		ResourcesMap: map[string]*schema.Resource{
 			"linuxbox_swap":               swap.Resource(),
+			"linuxbox_text_file":          textfile.Resource(),
 			"linuxbox_ssh_authorized_key": authorizedkey.Resource(),
 			"linuxbox_docker":             docker.Resource(),
 			"linuxbox_docker_copy_image":  copyimage.Resource(),
