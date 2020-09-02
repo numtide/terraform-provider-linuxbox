@@ -30,10 +30,16 @@ $ generate-terraform-provider-shim --version '< 0.2.0, >= 0.1.0' numtide/terrafo
 
 ### Configuring Provider
 
-Provider accepts no arguments, so adding the provider is always done with:
+Provider accepts one optional argument: `ssh_session_limit`.
+This is the limits number of sessions that will be open through SSH connection to a host.
+Current default limit is `5`.
+
+Sample provider declaration with setting the `ssh_session_limit` lower looks like this:
 
 ```hcl
-provider "linuxbox" {}
+provider "linuxbox" {
+  ssh_session_limit = 3
+}
 ```
 
 ### SSH Configuration used by every SSH resource.

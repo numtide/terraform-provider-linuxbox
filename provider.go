@@ -13,10 +13,19 @@ import (
 	"github.com/numtide/terraform-provider-linuxbox/resource/runsetup"
 	"github.com/numtide/terraform-provider-linuxbox/resource/ssh/authorizedkey"
 	"github.com/numtide/terraform-provider-linuxbox/resource/swap"
+	"github.com/numtide/terraform-provider-linuxbox/sshsession"
 )
 
 func Provider() *schema.Provider {
 	return &schema.Provider{
+		Schema: map[string]*schema.Schema{
+			"ssh_session_limit": &schema.Schema{
+				Type:     schema.TypeInt,
+				Default:  5,
+				Optional: true,
+			},
+		},
+
 		DataSourcesMap: map[string]*schema.Resource{
 			"linuxbox_source_hash": sourcehash.Resource(),
 		},
@@ -32,6 +41,11 @@ func Provider() *schema.Provider {
 			"linuxbox_docker_network":     network.Resource(),
 			"linuxbox_docker_run":         run.Resource(),
 			"linuxbox_run_setup":          runsetup.Resource(),
+		},
+
+		ConfigureFunc: func(d *schema.ResourceData) (interface{}, error) {
+			sshsession.SessionLimit = d.Get("ssh_session_limit").(int)
+			return nil, nil
 		},
 	}
 }

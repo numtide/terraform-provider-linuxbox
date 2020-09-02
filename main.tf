@@ -2,6 +2,7 @@ provider "digitalocean" {
 }
 
 provider "linuxbox" {
+  ssh_session_limit = 3
 }
 
 resource "digitalocean_droplet" "test" {

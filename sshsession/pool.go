@@ -15,6 +15,61 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+var SessionLimit = 5
+
+type sshClient struct {
+	*ssh.Client
+	sessionsInUse int
+	mu            *sync.Mutex
+	cond          *sync.Cond
+}
+
+func newSSHClient(sc *ssh.Client) *sshClient {
+	mu := new(sync.Mutex)
+	return &sshClient{
+		Client:        sc,
+		sessionsInUse: 0,
+		mu:            mu,
+		cond:          sync.NewCond(mu),
+	}
+}
+
+type sshSession struct {
+	*ssh.Session
+	cl *sshClient
+}
+
+func (s *sshClient) NewSession() (*sshSession, error) {
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for s.sessionsInUse >= SessionLimit {
+		s.cond.Wait()
+	}
+
+	cs, err := s.Client.NewSession()
+	if err != nil {
+		return nil, err
+	}
+
+	s.sessionsInUse++
+	return &sshSession{
+		Session: cs,
+		cl:      s,
+	}, nil
+}
+
+func (s *sshSession) Close() error {
+	defer func() {
+		s.cl.mu.Lock()
+		s.cl.sessionsInUse--
+		s.cl.cond.Broadcast()
+		s.cl.mu.Unlock()
+	}()
+	return s.Session.Close()
+}
+
 // ErrTimeout is returned when there was a timeout when connecting to SSH daemon.
 var ErrTimeout = serrors.New("timed out connecting to ssh daemon")
 
@@ -27,13 +82,13 @@ func newClientFuture() *clientFuture {
 }
 
 type clientFuture struct {
-	client *ssh.Client
+	client *sshClient
 	err    error
 	mu     *sync.Mutex
 	cnd    *sync.Cond
 }
 
-func (cf *clientFuture) getClient() (*ssh.Client, error) {
+func (cf *clientFuture) getClient() (*sshClient, error) {
 	cf.mu.Lock()
 	defer cf.mu.Unlock()
 	for cf.client == nil && cf.err == nil {
@@ -42,7 +97,7 @@ func (cf *clientFuture) getClient() (*ssh.Client, error) {
 	return cf.client, cf.err
 }
 
-func (cf *clientFuture) createClientInternal(cp clientParams) (*ssh.Client, error) {
+func (cf *clientFuture) createClientInternal(cp clientParams) (*sshClient, error) {
 	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(cp.privateKey), []byte{})
 
 	if err != nil {
@@ -82,7 +137,7 @@ func (cf *clientFuture) createClientInternal(cp clientParams) (*ssh.Client, erro
 		return nil, err
 	}
 
-	return client, nil
+	return newSSHClient(client), nil
 
 }
 
@@ -118,7 +173,7 @@ type clientParams struct {
 var clientPool = map[clientParams]*clientFuture{}
 var clientPoolMu = new(sync.Mutex)
 
-func getClient(d *schema.ResourceData) (*ssh.Client, error) {
+func getClient(d *schema.ResourceData) (*sshClient, error) {
 	cp := clientParams{
 		privateKey:  d.Get("ssh_key").(string),
 		user:        d.Get("ssh_user").(string),
