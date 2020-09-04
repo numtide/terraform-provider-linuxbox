@@ -34,11 +34,19 @@ resource "linuxbox_swap" "host_swap" {
 #     ssh_key = tls_private_key.ssh_key.private_key_pem
 # }
 
+resource "linuxbox_directory" "foo" {
+  host_address = digitalocean_droplet.test.ipv4_address
+  ssh_key      = tls_private_key.ssh_key.private_key_pem
+  path         = "/foo"
+  owner        = "root"
+  group        = "root"
+}
+
 
 resource "linuxbox_text_file" "test_file" {
   host_address = digitalocean_droplet.test.ipv4_address
   ssh_key      = tls_private_key.ssh_key.private_key_pem
-  path         = "/tmp/this is a test"
+  path         = "${linuxbox_directory.foo.path}/this is a test"
   content      = "testesttest"
   owner        = "root"
   group        = "root"

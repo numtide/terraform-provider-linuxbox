@@ -1,13 +1,13 @@
-package textfile
+package directory
 
 import (
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"strings"
 
 	"github.com/alessio/shellescape"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/numtide/terraform-provider-linuxbox/sshsession"
 	"github.com/pkg/errors"
@@ -46,11 +46,6 @@ func Resource() *schema.Resource {
 				ForceNew: true,
 			},
 
-			"content": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
-			},
-
 			"owner": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -74,8 +69,6 @@ func Resource() *schema.Resource {
 
 func resourceUpdateAndCreate(d *schema.ResourceData, m interface{}) error {
 
-	content := []byte(d.Get("content").(string))
-
 	path := d.Get("path").(string)
 
 	owner := d.Get("owner").(string)
@@ -83,19 +76,10 @@ func resourceUpdateAndCreate(d *schema.ResourceData, m interface{}) error {
 
 	mode := d.Get("mode").(string)
 
-	cmd := fmt.Sprintf(
-		"echo '%s' | base64 -d | cat > %s && chown %s:%s %s && chmod %s %s",
-		base64.StdEncoding.EncodeToString(content),
-		shellescape.Quote(path),
-		shellescape.Quote(owner),
-		shellescape.Quote(group),
-		shellescape.Quote(path),
-		shellescape.Quote(mode),
-		shellescape.Quote(path),
-	)
+	cmd := fmt.Sprintf("mkdir -p %s && chmod %s %s && chown %s:%s %s", shellescape.Quote(path), shellescape.Quote(mode), shellescape.Quote(path), shellescape.Quote(owner), shellescape.Quote(group), shellescape.Quote(path))
 	stdout, stderr, err := sshsession.Run(d, cmd)
 	if err != nil {
-		return errors.Wrapf(err, "error while creating file %q:\nSTDOUT:\n%s\nSTDERR:\n%s\n", path, string(stdout), string(stderr))
+		return errors.Wrapf(err, "error while creating dir %q:\nSTDOUT:\n%s\nSTDERR:\n%s\n", path, string(stdout), string(stderr))
 	}
 
 	sh := sha256.New()
@@ -134,20 +118,6 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 		d.Set("mode", parts[2])
 	}
 
-	{
-
-		cmd := fmt.Sprintf("cat '%s'", path)
-		stdout, _, err := sshsession.Run(d, cmd)
-		if err != nil {
-			return errors.Wrapf(err, "while getting content of %s", path)
-		}
-
-		stdoutString := string(stdout)
-
-		d.Set("content", stdoutString)
-
-	}
-
 	return nil
 
 }
@@ -155,11 +125,11 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	path := d.Get("path").(string)
 
-	cmd := fmt.Sprintf("rm -f '%s'", path)
+	cmd := fmt.Sprintf("rm -rf '%s'", shellescape.Quote(path))
 
 	stdout, stderr, err := sshsession.Run(d, cmd)
 	if err != nil {
-		return errors.Wrapf(err, "error while deletin file %s:\nSTDOUT:\n%s\nSTDERR:\n%s\n", path, string(stdout), string(stderr))
+		return errors.Wrapf(err, "error while deleting dir %q:\nSTDOUT:\n%s\nSTDERR:\n%s\n", path, string(stdout), string(stderr))
 	}
 
 	return nil

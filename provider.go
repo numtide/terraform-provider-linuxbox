@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/numtide/terraform-provider-linuxbox/datasource/sourcehash"
+	"github.com/numtide/terraform-provider-linuxbox/resource/directory"
 	"github.com/numtide/terraform-provider-linuxbox/resource/docker"
 	"github.com/numtide/terraform-provider-linuxbox/resource/docker/auth"
 	"github.com/numtide/terraform-provider-linuxbox/resource/docker/build"
@@ -32,17 +33,18 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"linuxbox_swap":               swap.Resource(),
-			"linuxbox_text_file":          textfile.Resource(),
-			"linuxbox_ssh_authorized_key": authorizedkey.Resource(),
-			"linuxbox_docker":             docker.Resource(),
-			"linuxbox_docker_copy_image":  copyimage.Resource(),
+			"linuxbox_directory":          directory.Resource(),
+			"linuxbox_docker_auth":        auth.Resource(),
 			"linuxbox_docker_build":       build.Resource(),
 			"linuxbox_docker_container":   container.Resource(),
-			"linuxbox_docker_auth":        auth.Resource(),
+			"linuxbox_docker_copy_image":  copyimage.Resource(),
 			"linuxbox_docker_network":     network.Resource(),
 			"linuxbox_docker_run":         run.Resource(),
+			"linuxbox_docker":             docker.Resource(),
 			"linuxbox_run_setup":          runsetup.Resource(),
+			"linuxbox_ssh_authorized_key": authorizedkey.Resource(),
+			"linuxbox_swap":               swap.Resource(),
+			"linuxbox_text_file":          textfile.Resource(),
 		},
 
 		ConfigureFunc: func(d *schema.ResourceData) (interface{}, error) {
