@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/alessio/shellescape"
@@ -47,15 +48,15 @@ func Resource() *schema.Resource {
 			},
 
 			"owner": &schema.Schema{
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  "root",
+				Default:  0,
 			},
 
 			"group": &schema.Schema{
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  "root",
+				Default:  0,
 			},
 
 			"mode": &schema.Schema{
@@ -71,12 +72,20 @@ func resourceUpdateAndCreate(d *schema.ResourceData, m interface{}) error {
 
 	path := d.Get("path").(string)
 
-	owner := d.Get("owner").(string)
-	group := d.Get("group").(string)
+	owner := d.Get("owner").(int)
+	group := d.Get("group").(int)
 
 	mode := d.Get("mode").(string)
 
-	cmd := fmt.Sprintf("mkdir -p %s && chmod %s %s && chown %s:%s %s", shellescape.Quote(path), shellescape.Quote(mode), shellescape.Quote(path), shellescape.Quote(owner), shellescape.Quote(group), shellescape.Quote(path))
+	cmd := fmt.Sprintf("mkdir -p %s && chmod %s %s && chown %d:%d %s",
+		shellescape.Quote(path),
+		shellescape.Quote(mode),
+		shellescape.Quote(path),
+		owner,
+		group,
+		shellescape.Quote(path),
+	)
+
 	stdout, stderr, err := sshsession.Run(d, cmd)
 	if err != nil {
 		return errors.Wrapf(err, "error while creating dir %q:\nSTDOUT:\n%s\nSTDERR:\n%s\n", path, string(stdout), string(stderr))
@@ -96,7 +105,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	path := d.Get("path").(string)
 
 	{
-		cmd := fmt.Sprintf("stat -c '%%U %%G %%a' %s", shellescape.Quote(path))
+		cmd := fmt.Sprintf("stat -c '%%u %%g %%a' %s", shellescape.Quote(path))
 
 		stdout, _, err := sshsession.Run(d, cmd)
 		if err != nil {
@@ -113,8 +122,20 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 			return errors.Errorf("malformed output of %q: %q", cmd, stdoutString)
 		}
 
-		d.Set("owner", parts[0])
-		d.Set("group", parts[1])
+		owner, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return errors.Wrapf(err, "while parsing owner id %q", parts[0])
+		}
+
+		d.Set("owner", owner)
+
+		group, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return errors.Wrapf(err, "while parsing group id %q", parts[1])
+		}
+
+		d.Set("group", group)
+
 		d.Set("mode", parts[2])
 	}
 
@@ -125,7 +146,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 func resourceDelete(d *schema.ResourceData, m interface{}) error {
 	path := d.Get("path").(string)
 
-	cmd := fmt.Sprintf("rm -rf '%s'", shellescape.Quote(path))
+	cmd := fmt.Sprintf("rm -rf %s", shellescape.Quote(path))
 
 	stdout, stderr, err := sshsession.Run(d, cmd)
 	if err != nil {
