@@ -128,6 +128,10 @@ resource "linuxbox_docker_container" "webpage" {
   restart = "unless-stopped"
 
   network = "bridge"
+
+  log_opts = {
+    "max-file" = 3
+  }
 }
 
 resource "linuxbox_docker_container" "traefik" {

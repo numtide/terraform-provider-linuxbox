@@ -117,6 +117,21 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+
+			"log_driver": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "json-file",
+			},
+
+			"log_opts": &schema.Schema{
+				Type:     schema.TypeMap,
+				Optional: true,
+				Default:  map[string]interface{}{},
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
 		},
 	}
 }
@@ -159,6 +174,16 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	for k, v := range labelsMap {
 		cmd = append(cmd, "-l", fmt.Sprintf("%s=%s", shellescape.Quote(k), shellescape.Quote(v.(string))))
+	}
+
+	logDriver := d.Get("log_driver").(string)
+
+	cmd = append(cmd, "--log-driver", logDriver)
+
+	logOptsMap := d.Get("log_opts").(map[string]interface{})
+
+	for k, v := range logOptsMap {
+		cmd = append(cmd, "--log-opt", fmt.Sprintf("%s=%s", shellescape.Quote(k), shellescape.Quote(v.(string))))
 	}
 
 	envMap := d.Get("env").(map[string]interface{})
@@ -429,6 +454,18 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 			}
 			d.Set("args", schema.NewSet(schema.HashString, args))
 		}
+
+		// log_driver
+		d.Set("log_driver", containerData.HostConfig.LogConfig.Type)
+
+		// log_opts
+		logOpts := map[string]interface{}{}
+
+		for k, v := range containerData.HostConfig.LogConfig.Config {
+			logOpts[k] = v
+		}
+
+		d.Set("log_opts", logOpts)
 
 	}
 
