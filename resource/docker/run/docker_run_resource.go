@@ -94,6 +94,12 @@ func Resource() *schema.Resource {
 				Optional: true,
 			},
 
+			"clear_entry_point": &schema.Schema{
+				Type:     schema.TypeBool,
+				Default:  false,
+				Optional: true,
+			},
+
 			"network": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -190,6 +196,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			cmd = append(cmd, "-v", shellescape.Quote(v))
 		}
 	}
+
+	clearEntryPoint := d.Get("clear_entry_point").(bool)
+
+	if clearEntryPoint {
+		cmd = append(cmd, "--entrypoint", "''")
+	}
+
 	privileged := d.Get("privileged").(bool)
 
 	if privileged {
