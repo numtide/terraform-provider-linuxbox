@@ -133,6 +133,9 @@ resource "linuxbox_docker_container" "webpage" {
   log_opts = {
     "max-file" = 3
   }
+
+  // 100 megs
+  memory = 104857600
 }
 
 resource "linuxbox_docker_container" "traefik" {

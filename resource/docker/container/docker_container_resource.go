@@ -132,6 +132,12 @@ func Resource() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
+
+			"memory": &schema.Schema{
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  0,
+			},
 		},
 	}
 }
@@ -230,6 +236,13 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 			cmd = append(cmd, "-v", shellescape.Quote(v))
 		}
 	}
+
+	memory := d.Get("memory").(int)
+	if memory > 0 {
+		cmd = append(cmd, "--memory", fmt.Sprintf("%d", memory))
+	}
+
+	// done with the container options, add image
 
 	cmd = append(cmd, shellescape.Quote(imageID))
 
@@ -356,6 +369,9 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 		privileged := containerData.HostConfig.Privileged
 		d.Set("privileged", privileged)
+
+		memory := int(containerData.HostConfig.Memory)
+		d.Set("memory", memory)
 
 		// labels
 		_, labelsAreSet := d.GetOkExists("labels")
