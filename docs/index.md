@@ -22,3 +22,4 @@ TODO
 * [linuxbox_run_setup](resources/run_setup.md)
 * [linuxbox_ssh_authorized_key](resources/ssh_authorized_key.md)
 * [linuxbox_swap](resources/swap.md)
+* [linuxbox_text_file](resources/text_file.md)
