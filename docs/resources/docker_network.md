@@ -1,11 +1,11 @@
-# `linuxbox_network` Resource
+# `linuxbox_docker_network` Resource
 
 Declares a Docker network on the target host.
 
 ## Example Usage
 
 ```hcl
-resource "linuxbox_network" "my_network" {
+resource "linuxbox_docker_network" "my_network" {
   host_address = digitalocean_droplet.test.ipv4_address
   ssh_key      = tls_private_key.ssh_key.private_key_pem
 

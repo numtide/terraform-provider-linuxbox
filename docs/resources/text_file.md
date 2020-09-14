@@ -1,4 +1,4 @@
-# `text_file` Resource
+# `linuxbox_text_file` Resource
 
 Creates a file on the target host if missing.
 

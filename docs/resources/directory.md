@@ -1,4 +1,4 @@
-# `directory` Resource
+# `linuxbox_directory` Resource
 
 Creates a directory on the target host if missing.
 
