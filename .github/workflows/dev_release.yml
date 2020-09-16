@@ -12,9 +12,6 @@
 name: dev_release
 on:
   push:
-    # Don't run release.yml and dev_release.yml at the same time
-    tags-ignore:
-      - 'v*'
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
