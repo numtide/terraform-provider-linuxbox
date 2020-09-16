@@ -46,7 +46,7 @@ jobs:
         with:
             name: linux-amd64
             path: dist/*_linux_amd64.zip
-      - uses: actions/upload-artifact@v2
-        with:
-            name: windows-amd64
-            path: dist/*_windows_amd64.zip
+      # - uses: actions/upload-artifact@v2
+      #   with:
+      #       name: windows-amd64
+      #       path: dist/*_windows_amd64.zip
