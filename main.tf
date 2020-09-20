@@ -146,7 +146,7 @@ resource "linuxbox_docker_container" "traefik" {
   image_id     = "traefik:v1.7.19-alpine"
   host_address = digitalocean_droplet.test.ipv4_address
   ports = [
-    "80:80",
+    "127.0.0.1:80:80",
     "443:443",
   ]
   volumes = [

@@ -444,7 +444,6 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 		if portsAreSet {
 			ports := []interface{}{}
-			// containerData.Config.ExposedPorts
 			for port, bindings := range containerData.HostConfig.PortBindings {
 				postfix := ""
 				if port.Proto() != "tcp" {
@@ -456,6 +455,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				}
 				b := bindings[0]
 
+				if b.HostIP != "" {
+					ports = append(ports, fmt.Sprintf("%s:%s:%d%s", b.HostIP, b.HostPort, port.Int(), postfix))
+					continue
+				}
 				ports = append(ports, fmt.Sprintf("%s:%d%s", b.HostPort, port.Int(), postfix))
 			}
 			d.Set("ports", schema.NewSet(schema.HashString, ports))
