@@ -6,11 +6,12 @@ provider "linuxbox" {
 }
 
 resource "digitalocean_droplet" "test" {
-  image    = "ubuntu-18-04-x64"
-  name     = "terraform-test-1"
-  region   = "lon1"
-  size     = "s-1vcpu-1gb"
-  ssh_keys = [digitalocean_ssh_key.terraform.fingerprint]
+  image              = "ubuntu-18-04-x64"
+  name               = "terraform-test-1"
+  region             = "lon1"
+  size               = "s-1vcpu-1gb"
+  private_networking = true
+  ssh_keys           = [digitalocean_ssh_key.terraform.fingerprint]
 }
 
 resource "tls_private_key" "ssh_key" {
@@ -50,6 +51,15 @@ resource "linuxbox_text_file" "test_file" {
   content      = "testesttest"
   owner        = 0
   group        = 0
+}
+
+resource "linuxbox_binary_file" "test_binfile" {
+  host_address   = digitalocean_droplet.test.ipv4_address
+  ssh_key        = tls_private_key.ssh_key.private_key_pem
+  path           = "${linuxbox_directory.foo.path}/this is a test - binary%"
+  content_base64 = base64encode("test-binary")
+  owner          = 0
+  group          = 0
 }
 
 resource "linuxbox_run_setup" "install_docker" {

@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/numtide/terraform-provider-linuxbox/datasource/sourcehash"
+	"github.com/numtide/terraform-provider-linuxbox/resource/binaryfile"
 	"github.com/numtide/terraform-provider-linuxbox/resource/directory"
 	"github.com/numtide/terraform-provider-linuxbox/resource/docker"
 	"github.com/numtide/terraform-provider-linuxbox/resource/docker/auth"
@@ -45,6 +46,7 @@ func Provider() *schema.Provider {
 			"linuxbox_ssh_authorized_key": authorizedkey.Resource(),
 			"linuxbox_swap":               swap.Resource(),
 			"linuxbox_text_file":          textfile.Resource(),
+			"linuxbox_binary_file":        binaryfile.Resource(),
 		},
 
 		ConfigureFunc: func(d *schema.ResourceData) (interface{}, error) {
