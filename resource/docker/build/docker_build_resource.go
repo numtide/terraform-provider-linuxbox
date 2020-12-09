@@ -47,6 +47,13 @@ func Resource() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"build_args": &schema.Schema{
+				Type: schema.TypeMap,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Optional: true,
+			},
 		},
 	}
 }
@@ -92,9 +99,21 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 
 	defer rc.Close()
 
+	buildArgs := map[string]*string{}
+
+	buildArgsMap := d.Get("build_args").(map[string]interface{})
+
+	if buildArgsMap != nil {
+		for k, v := range buildArgsMap {
+			vs := v.(string)
+			buildArgs[k] = &vs
+		}
+	}
+
 	ibResponse, err := dc.ImageBuild(context.Background(), rc, types.ImageBuildOptions{
 		Tags:       []string{imageTag},
 		Dockerfile: d.Get("dockerfile").(string),
+		BuildArgs:  buildArgs,
 	})
 
 	if err != nil {
