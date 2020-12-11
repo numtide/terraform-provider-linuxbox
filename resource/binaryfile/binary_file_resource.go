@@ -47,9 +47,9 @@ func Resource() *schema.Resource {
 			},
 
 			"content_base64": &schema.Schema{
-				Type: schema.TypeString,
-				// Sensitive: true,
-				Required: true,
+				Type:      schema.TypeString,
+				Sensitive: true,
+				Required:  true,
 			},
 
 			"owner": &schema.Schema{
