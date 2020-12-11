@@ -149,7 +149,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	{
 
-		cmd := fmt.Sprintf("cat %s | base64", shellescape.Quote(path))
+		cmd := fmt.Sprintf("cat %s | base64 -w 0", shellescape.Quote(path))
 		stdout, _, err := sshsession.Run(d, cmd)
 		if err != nil {
 			return errors.Wrapf(err, "while getting content of %s", path)
