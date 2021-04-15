@@ -383,7 +383,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				l[k] = v
 			}
 
-			for k := range imageInfo.ContainerConfig.Labels {
+			for k := range imageInfo.Config.Labels {
 				delete(l, k)
 			}
 
@@ -404,7 +404,7 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 				}
 			}
 
-			for _, e := range imageInfo.ContainerConfig.Env {
+			for _, e := range imageInfo.Config.Env {
 				se := strings.SplitN(e, "=", 2)
 				if len(se) == 2 {
 					v := env[se[0]]
