@@ -50,7 +50,7 @@ func resourceCreate(d *schema.ResourceData, m interface{}) error {
 	privateKeyBytes := d.Get("ssh_key").(string)
 	sshUser := d.Get("ssh_user").(string)
 
-	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(privateKeyBytes), []byte{})
+	signer, err := ssh.ParsePrivateKey([]byte(privateKeyBytes))
 
 	if err != nil {
 		return errors.Wrap(err, "while parsing private ssh_key")

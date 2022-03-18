@@ -98,7 +98,7 @@ func (cf *clientFuture) getClient() (*sshClient, error) {
 }
 
 func (cf *clientFuture) createClientInternal(cp clientParams) (*sshClient, error) {
-	signer, err := ssh.ParsePrivateKeyWithPassphrase([]byte(cp.privateKey), []byte{})
+	signer, err := ssh.ParsePrivateKey([]byte(cp.privateKey))
 
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing private ssh_key")
