@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/alessio/shellescape v1.4.1
 	github.com/docker/cli v20.10.14+incompatible
-	github.com/docker/docker v20.10.14+incompatible
+	github.com/docker/docker v20.10.15+incompatible
 	github.com/hashicorp/terraform-plugin-sdk v1.17.2
 	github.com/pkg/errors v0.9.1
 	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
@@ -40,7 +40,6 @@ require (
 	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
-	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-getter v1.5.3 // indirect
