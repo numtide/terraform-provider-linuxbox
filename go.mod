@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/alessio/shellescape v1.4.1
-	github.com/docker/cli v20.10.14+incompatible
+	github.com/docker/cli v23.0.0+incompatible
 	github.com/docker/docker v20.10.21+incompatible
 	github.com/hashicorp/terraform-plugin-sdk v1.17.2
 	github.com/pkg/errors v0.9.1
@@ -67,6 +67,7 @@ require (
 	github.com/mitchellh/mapstructure v1.3.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/moby/buildkit v0.10.0 // indirect
+	github.com/moby/patternmatcher v0.5.0 // indirect
 	github.com/moby/sys/mount v0.3.1 // indirect
 	github.com/moby/sys/mountinfo v0.6.0 // indirect
 	github.com/moby/sys/symlink v0.2.0 // indirect
