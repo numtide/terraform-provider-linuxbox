@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/alessio/shellescape v1.4.1
 	github.com/docker/cli v23.0.1+incompatible
-	github.com/docker/docker v23.0.1+incompatible
+	github.com/docker/docker v23.0.2+incompatible
 	github.com/hashicorp/terraform-plugin-sdk v1.17.2
 	github.com/pkg/errors v0.9.1
 	golang.org/x/crypto v0.6.0
