@@ -31,6 +31,7 @@ func Provider() *schema.Provider {
 
 		DataSourcesMap: map[string]*schema.Resource{
 			"linuxbox_source_hash": sourcehash.Resource(),
+			"linuxbox_text_file":   textfile.Resource(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
