@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/numtide/terraform-provider-linuxbox/datasource/sourcehash"
+	datasource_textfile "github.com/numtide/terraform-provider-linuxbox/datasource/textfile"
 	"github.com/numtide/terraform-provider-linuxbox/resource/binaryfile"
 	"github.com/numtide/terraform-provider-linuxbox/resource/directory"
 	"github.com/numtide/terraform-provider-linuxbox/resource/docker"
@@ -31,6 +32,7 @@ func Provider() *schema.Provider {
 
 		DataSourcesMap: map[string]*schema.Resource{
 			"linuxbox_source_hash": sourcehash.Resource(),
+			"linuxbox_text_file":   datasource_textfile.Resource(),
 		},
 
 		ResourcesMap: map[string]*schema.Resource{

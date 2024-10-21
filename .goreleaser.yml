@@ -1,5 +1,6 @@
 # Visit https://goreleaser.com for documentation on how to customize this
 # behavior.
+version: 2
 before:
   hooks:
     - go mod tidy
@@ -45,4 +46,4 @@ release:
   # Visit your project's GitHub Releases page to publish this release.
   draft: true
 changelog:
-  skip: true
+  disable: true
