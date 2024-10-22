@@ -10,8 +10,7 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
-		Read:   resourceRead,
-		Update: resourceRead,
+		Read: resourceRead,
 
 		Schema: map[string]*schema.Schema{
 			"ssh_key": {
