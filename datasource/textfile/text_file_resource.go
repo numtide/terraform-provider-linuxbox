@@ -31,6 +31,12 @@ func Resource() *schema.Resource {
 				Required: true,
 			},
 
+			"sudo": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+			},
+
 			"path": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -48,6 +54,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	path := d.Get("path").(string)
 
 	cmd := fmt.Sprintf("cat %s", shellescape.Quote(path))
+	if d.Get("sudo").(bool) {
+		cmd = fmt.Sprintf("sudo %s", cmd)
+	}
+
 	stdout, _, err := sshsession.Run(d, cmd)
 	if err != nil {
 		return fmt.Errorf("while getting content of %s: %w", path, err)
