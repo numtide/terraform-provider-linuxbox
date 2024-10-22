@@ -10,7 +10,8 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
-		Read: resourceRead,
+		Read:   resourceRead,
+		Update: resourceRead,
 
 		Schema: map[string]*schema.Schema{
 			"ssh_key": {
@@ -66,6 +67,8 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 	stdoutString := string(stdout)
 
 	d.Set("content", stdoutString)
+
+	d.SetId("-")
 
 	return nil
 
