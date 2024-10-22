@@ -37,7 +37,8 @@ func Resource() *schema.Resource {
 			},
 
 			"content": {
-				Type: schema.TypeString,
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}
