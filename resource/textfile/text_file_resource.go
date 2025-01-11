@@ -102,7 +102,7 @@ func resourceUpdateAndCreate(d *schema.ResourceData, m interface{}) error {
 	)
 
 	if d.Get("sudo").(bool) {
-		cmd = fmt.Sprintf("sudo %s", cmd)
+		cmd = fmt.Sprintf("sudo sh -c %s", shellescape.Quote(cmd))
 	}
 
 	stdout, stderr, err := sshsession.Run(d, cmd)
@@ -125,6 +125,10 @@ func resourceRead(d *schema.ResourceData, m interface{}) error {
 
 	{
 		cmd := fmt.Sprintf("stat -c '%%u %%g %%a' %s", shellescape.Quote(path))
+
+		if d.Get("sudo").(bool) {
+			cmd = fmt.Sprintf("sudo sh -c %s", shellescape.Quote(cmd))
+		}
 
 		stdout, _, err := sshsession.Run(d, cmd)
 		if err != nil {
@@ -181,9 +185,13 @@ func resourceDelete(d *schema.ResourceData, m interface{}) error {
 
 	cmd := fmt.Sprintf("rm -f %s", shellescape.Quote(path))
 
+	if d.Get("sudo").(bool) {
+		cmd = fmt.Sprintf("sudo sh -c %s", shellescape.Quote(cmd))
+	}
+
 	stdout, stderr, err := sshsession.Run(d, cmd)
 	if err != nil {
-		return errors.Wrapf(err, "error while deletin file %s:\nSTDOUT:\n%s\nSTDERR:\n%s\n", path, string(stdout), string(stderr))
+		return errors.Wrapf(err, "error while deleting file %s:\nSTDOUT:\n%s\nSTDERR:\n%s\n", path, string(stdout), string(stderr))
 	}
 
 	return nil
