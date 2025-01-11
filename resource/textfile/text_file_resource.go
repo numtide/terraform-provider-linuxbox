@@ -22,52 +22,58 @@ func Resource() *schema.Resource {
 		Delete: resourceDelete,
 
 		Schema: map[string]*schema.Schema{
-			"ssh_key": &schema.Schema{
+			"ssh_key": {
 				Type:      schema.TypeString,
 				Required:  true,
 				Sensitive: true,
 			},
 
-			"ssh_user": &schema.Schema{
+			"ssh_user": {
 				Type:     schema.TypeString,
 				Required: false,
 				Default:  "root",
 				Optional: true,
 			},
 
-			"host_address": &schema.Schema{
+			"host_address": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"path": &schema.Schema{
+			"path": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"content": &schema.Schema{
+			"content": {
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"owner": &schema.Schema{
+			"owner": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  0,
 			},
 
-			"group": &schema.Schema{
+			"group": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  0,
 			},
 
-			"mode": &schema.Schema{
+			"mode": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "755",
+			},
+
+			"sudo": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
 			},
 		},
 	}
@@ -94,6 +100,11 @@ func resourceUpdateAndCreate(d *schema.ResourceData, m interface{}) error {
 		shellescape.Quote(mode),
 		shellescape.Quote(path),
 	)
+
+	if d.Get("sudo").(bool) {
+		cmd = fmt.Sprintf("sudo %s", cmd)
+	}
+
 	stdout, stderr, err := sshsession.Run(d, cmd)
 	if err != nil {
 		return errors.Wrapf(err, "error while creating file %q:\nSTDOUT:\n%s\nSTDERR:\n%s\n", path, string(stdout), string(stderr))
